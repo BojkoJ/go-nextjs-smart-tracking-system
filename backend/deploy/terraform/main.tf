@@ -70,6 +70,19 @@ provider "kubernetes" {
   cluster_ca_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].cluster_ca_certificate
 }
 
+// nadefinujeme si namespace infrastructure, ve kterém poběží věci které "slouží" (redis, postrgesql, message broker atd)
+resource "kubernetes_namespace" "infra" {
+  metadata {
+    // toto uvidíme když dáme kubectl get ns
+    name = "infrastructure"
+  }
+}
+
+resource "kubernetes_namespace" "apps" {
+  metadata {
+    name = "tracking-system"
+  }
+}
 
 // tímto řekneme terraformu: "Použij ten ovladač kubernetes a vytvoř v něm objekt typu deployment"
 // "hello_world" je vnitřní název pro Terraform. Pokud bychom později na tento deployment chtěli odkazovat, použijeme toto jméno.
@@ -82,6 +95,7 @@ resource "kubernetes_deployment" "hello_world" {
   metadata {
     // toto je název přímo uvnitř kubernetes. když později napíšeme v terminálu kubectl get deployments, uvidíme tam toto jméno
     name = "hello-world-deployment"
+    namespace = kubernetes_namespace.apps.metadata[0].name
   }
 
   spec {
@@ -133,6 +147,7 @@ resource "kubernetes_service" "hello_world_service" {
   metadata {
     // stejně jako u deploymentu, i Service musí mít jméno
     name = "hello-world-service"
+    namespace = kubernetes_namespace.apps.metadata[0].name
   }
 
   // zde definujeme jak má service fungovat
