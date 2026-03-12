@@ -64,7 +64,6 @@ provider "kubernetes" {
   // Uvnitř tohoto bloku budeme dále potřebovat tyto tři položky.
   // V k3d clusteru jsou tyto údaje uložené ve vnořené struktuře.
   // V Terraformu se k nim dostaneme přes tuto notaci: TYP_ZDROJE.JMÉNO_ZDROJE.ATRIBUT.
-  // Jsou ale uložené v zakódovaném formátu Base64, aby je provider mohl přečíst musíme je rozbalti pomocí base64decode()
   client_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_certificate
   client_key = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_key
   cluster_ca_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].cluster_ca_certificate
