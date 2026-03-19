@@ -62,10 +62,13 @@ resource "k3d_cluster" "tracking_system_k3s_cluster" {
   }
 }
 
+
 // Blok provider nic nevytváří, ale nastavuje
 // tento blok bude dělat nastavení našeho kubernetes (hashicorp/kubernetes nainstalované v terraform/required_providers)
 provider "kubernetes" {
-  # path.module zajistí, že Terraform hledá přesně ve složce, kde právě jsme
+  // path.module zajistí, že Terraform hledá přesně ve složce, kde právě jsme
+  // tenhle .yaml se vytvoří příkazem:
+  // k3d kubeconfig get tracking-system-k3s-cluster > k3d-config.yaml
   config_path = "${path.module}/k3d-config.yaml"
 }
 
