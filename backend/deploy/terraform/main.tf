@@ -19,6 +19,14 @@ terraform {
       source  = "hashicorp/kubernetes"
       version = "2.38.0"
     }
+
+    // Chceme si pomocí Terraformu do namespace "infrastricture" nainstalovat NATS (kvůli Jetstream)
+    // Na to použijeme Helm ovladač (provider), který nám umožní říct: "Nainstaluj mi tento Helm chart do tohoto namespace"
+    // Helm je vlastně něco jako App Store pro Kubernetes - dají se pomocí něho instalovat věci
+    helm = {
+      source  = "hashicorp/helm"
+      version = "3.0.2"
+    }
   }
 }
 
@@ -57,17 +65,16 @@ resource "k3d_cluster" "tracking_system_k3s_cluster" {
 // Blok provider nic nevytváří, ale nastavuje
 // tento blok bude dělat nastavení našeho kubernetes (hashicorp/kubernetes nainstalované v terraform/required_providers)
 provider "kubernetes" {
-  // Tímto říkáme: "Všechny příkazy, které se týkají Kubernetes, posílej na tuhle adresu."
-  // Je to ta samá adresa, kterou jsme definovali v bloku k3d_cluster jako host_port v rámci kube_api
-  host = "https://127.0.0.1:6445"
-  // Kubernetes nás dovnitř nepustí jen tak - chce vidět certifikáty - budeme dělat PROPOJOVÁNÍ ZDROJŮ
-  // Uvnitř tohoto bloku budeme dále potřebovat tyto tři položky.
-  // V k3d clusteru jsou tyto údaje uložené ve vnořené struktuře.
-  // V Terraformu se k nim dostaneme přes tuto notaci: TYP_ZDROJE.JMÉNO_ZDROJE.ATRIBUT.
-  // Jsou ale uložené v zakódovaném formátu Base64, aby je provider mohl přečíst musíme je rozbalti pomocí base64decode()
-  client_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_certificate
-  client_key = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_key
-  cluster_ca_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].cluster_ca_certificate
+  # path.module zajistí, že Terraform hledá přesně ve složce, kde právě jsme
+  config_path = "${path.module}/k3d-config.yaml"
+}
+
+// Záměrně pod provider kubernetes si dáme provider pro helm:
+provider "helm" {
+  // musíme helmu říct, kde najde můj cluster - použijeme k tomu vnořený blok kubernetes
+  kubernetes = {
+    config_path = "${path.module}/k3d-config.yaml"
+  }
 }
 
 // nadefinujeme si namespace infrastructure, ve kterém poběží věci které "slouží" (redis, postrgesql, message broker atd)
@@ -83,6 +90,42 @@ resource "kubernetes_namespace" "apps" {
     name = "tracking-system"
   }
 }
+
+// definice NATS přes Helm:
+// tady budeme definovat objekt, který Terraformu řekne: "Vezmi tenhle balíček z Internetu a nainstaluj ho do namespace infra"
+resource "helm_release" "nats" {
+  // jméno, které uvidíme v Helmu
+  name = "nats-server"
+
+  // Repozitář, kde chceme lokalizovat příslušný Helm chart
+  repository = "https://nats-io.github.io/k8s/helm/charts/"
+
+  // jméno toho příslušného Helm chartu, který si chceme vytáhnout z repozitáře
+  chart = "nats"
+
+  // tímhle terraformu řekneme: "instaluj to tam, kde jsi vytvořil namespace infrastructure"
+  namespace = kubernetes_namespace.infra.metadata[0].name
+
+  // tím zapneme "paměť" pro naše zprávy
+  // blok "set" dělá to, že přepíše výchozí hodnotu v Helm chartu, která je jinak false
+
+  set = [
+    {
+      // jméno, té hodnoty, kterou chceme přepsat
+      name = "config.jetstream.enabled"
+      // nová value
+      value = "true"
+      // Proč jsme tuhle hodnotu v našem helm chartu "nats" přepisovali:
+      // V našem projektu potřebujeme, aby NATS měl zapnutou funkci Jetstream, která nám umožní trvalé ukládání zpráv.
+    },
+    // to stejné znovu, ale pro hodnotu "cluster.enabled":
+    {
+      name = "config.cluster.enabled"
+      value = "false" // chceme jeden jediný NATS server, nepotřebujeme cluster NATS serverů - tím šetříme omezené systémové prostředky
+    }
+  ]
+}
+
 
 // tímto řekneme terraformu: "Použij ten ovladač kubernetes a vytvoř v něm objekt typu deployment"
 // "hello_world" je vnitřní název pro Terraform. Pokud bychom později na tento deployment chtěli odkazovat, použijeme toto jméno.
