@@ -1,0 +1,25 @@
+syntax = "proto3"; // verze 3 Protobuf jazyka, aktuální standard
+package telemetry; // namespace pro proto soubor, zabrání kolizím pokudp řídáme více .proto souborů
+
+// říká protoc kam v Go projektu patří vygenerovaný kód; část za středníkem (proto) je Go package name
+option go_package = "github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/proto;proto";
+
+message TelemetryRequest {
+  string asset_id     = 1;
+  double latitude     = 2;
+  double longitude    = 3;
+  double temperature  = 4;
+  double humidity     = 5;
+  bool   is_locked    = 6;
+  int64  timestamp_ns = 7;
+  string trace_id     = 8;
+}
+
+message TelemetryResponse {
+  bool   success = 1;
+  string message = 2; // String s detailnem případné chyby
+}
+
+service TelemetryService {
+  rpc SendTelemetry(TelemetryRequest) returns (TelemetryResponse);
+}
