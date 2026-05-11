@@ -24,10 +24,10 @@ type AssetStatus string
 // najede hodně km nebo nastane problém -> maintenance,
 // fyzicky dosluhuje -> decomissioned.
 const (
-	StatusNew           AssetStatus = "new"           // Stav: nový
-	StatusActive        AssetStatus = "active"        // Stav: aktivní
-	StatusMaintenance   AssetStatus = "maintenance"   // Stav: v údržbě
-	StatusDecomissioned AssetStatus = "decomissioned" // Stav: vyřezený
+	StatusNew            AssetStatus = "new"            // Stav: nový
+	StatusActive         AssetStatus = "active"         // Stav: aktivní
+	StatusMaintenance    AssetStatus = "maintenance"    // Stav: v údržbě
+	StatusDecommissioned AssetStatus = "decommissioned" // Stav: vyřezený
 )
 
 // Asset reprezentuje jedno firemní aktivum (přepravní lodní kontejner)
