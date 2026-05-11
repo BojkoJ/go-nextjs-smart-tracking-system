@@ -11,3 +11,9 @@ resource "kubernetes_namespace" "apps" {
     name = var.k3s_namespace_apps_name
   }
 }
+
+resource "kubernetes_namespace" "argocd" {
+  metadata {
+    name = var.k3s_namespace_argocd_name
+  }
+}

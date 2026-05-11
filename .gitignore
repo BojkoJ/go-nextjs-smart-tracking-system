@@ -1,7 +1,11 @@
 .github/copilot-instructions.md
+
 backend/deploy/terraform/.terraform
 backend/deploy/terraform/k3d-config.yaml
 backend/deploy/terraform/terraform.tfstate
 backend/deploy/terraform/terraform.tfstate.backup
+backend/deploy/terraform/*.tfvars
+
 texts
+
 .idea

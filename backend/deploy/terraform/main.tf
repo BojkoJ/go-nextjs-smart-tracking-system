@@ -47,18 +47,24 @@ terraform {
 
 // Blok provider nic nevytváří, ale nastavuje
 // tento blok bude dělat nastavení našeho kubernetes (hashicorp/kubernetes nainstalované v terraform/required_providers)
+// Místo souboru k3d-config.yaml používáme credentials přímo z k3d_cluster resource.
+// Tím odpadá nutnost dvou kroků (nejdřív apply jen pro cluster, pak generovat yaml, pak apply znovu).
+// Terraform sám pozná závislost a cluster vytvoří jako první.
 provider "kubernetes" {
-  // path.module zajistí, že Terraform hledá přesně ve složce, kde právě jsme
-  // tenhle .yaml se vytvoří příkazem:
-  // k3d kubeconfig get tracking-system-k3s-cluster > k3d-config.yaml
-  config_path = "${path.module}/k3d-config.yaml"
+  host                   = k3d_cluster.tracking_system_k3s_cluster.credentials[0].host
+  client_certificate     = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_certificate
+  client_key             = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_key
+  cluster_ca_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].cluster_ca_certificate
 }
 
 // Záměrně pod provider kubernetes si dáme provider pro helm:
 provider "helm" {
   // musíme helmu říct, kde najde můj cluster - použijeme k tomu vnořený blok kubernetes
   kubernetes = {
-    config_path = "${path.module}/k3d-config.yaml"
+    host                   = k3d_cluster.tracking_system_k3s_cluster.credentials[0].host
+    client_certificate     = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_certificate
+    client_key             = k3d_cluster.tracking_system_k3s_cluster.credentials[0].client_key
+    cluster_ca_certificate = k3d_cluster.tracking_system_k3s_cluster.credentials[0].cluster_ca_certificate
   }
 }
 

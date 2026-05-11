@@ -1,6 +1,6 @@
 
 // Nyní potřebujeme service, bez něj by kontejnery sice běžely, ale byly by uzavřené uvnitř clusteru.
-// Nikdy zvenčí by k nim nemohl přistupovat či s nimi komunikovat.
+// Nikdo zvenčí by k nim nemohl přistupovat či s nimi komunikovat.
 resource "kubernetes_service" "hello_world_service" {
   depends_on = [k3d_cluster.tracking_system_k3s_cluster]
   metadata {

@@ -119,3 +119,66 @@ variable "helm_release_nats_chart" {
   description = "Jméno chartu, který hledáme v daném repozitáři"
   default = "nats"
 }
+
+// -------- Pro PostgreSQL: -----------------
+variable "helm_release_postgres_name" {
+  type = string
+  description = "Jméno PostgreSQL Helm Releasu"
+  default = "postgresql"
+}
+
+variable "helm_release_postgres_repo" {
+  type = string
+  description = "Odkaz na repozitář, který obsahuje daný Helm Chart pro PostgreSQL"
+  default = "oci://registry-1.docker.io/bitnamicharts"
+}
+
+variable "helm_release_postgres_chart" {
+  type = string
+  description = "Jméno PostgreSQL Helm Chartu pro tento Helm Release"
+  default = "postgresql"
+}
+
+variable "postgres_db_name" {
+  type = string
+  description = "Jméno PostgreSQL databáze, kterou projekt používá"
+  default = "tracking_db"
+}
+
+variable "postgres_user" {
+  type = string
+  description = "Jméno PostgreSQL usera, který bude databázi používat"
+  default = "tracking_user"
+}
+
+// Heslo: nemá default, hodnotu pak bude brát z terraform.tfvars
+variable "postgres_password" {
+  type = string
+  description = "Heslo k PostgreSQL databázi, které zde není skutečně uloženo"
+  sensitive = true // Terraform toto pole skryje v logu, nikdy tuto hodnotu nebude vypisovat do terminálu.
+}
+
+// -------- Pro ArgoCD: -----------------
+variable "helm_release_argocd_name" {
+  type = string
+  description = "Jméno ArgoCD Helm Releasu"
+  default = "argocd"
+}
+
+variable "helm_release_argocd_repo" {
+  type = string
+  description = "Odkaz na repozitář, který obsahuje daný Helm Chart pro ArgoCD"
+  default = "https://argoproj.github.io/argo-helm"
+}
+
+variable "helm_release_argocd_chart" {
+  type = string
+  description = "Jméno ArgoCD Helm Chartu pro tento Helm Release"
+  default = "argo-cd"
+}
+
+variable "k3s_namespace_argocd_name" {
+  type = string
+  description = "Jméno pro ArgoCD, které bude znát k3s namespace zvaný \"infra\""
+  default = "argocd"
+}
