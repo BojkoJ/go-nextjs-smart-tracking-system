@@ -101,7 +101,20 @@ func (processService *ProcessingServiceImpl) ProcessTelemetry(ctx context.Contex
 			return fmt.Errorf("saving new alert to PostgreSQL database: %w", err)
 		}
 	}
+	if telemetry.Humidity > asset.MaxHumidity {
+		alert := domain.Alert{
+			ID:        uuid.New().String(),
+			AssetID:   asset.ID,
+			Type:      domain.AlertHumidityMax,
+			Message:   fmt.Sprintf("ALERT: Asset exceeded its maximum humidity(%.1f%%). Current humidity: %.1f%%", asset.MaxHumidity, telemetry.Humidity),
+			CreatedAt: time.Now(),
+		}
+		err := processService.alertRepo.SaveAlert(ctx, alert)
+		if err != nil {
+			return fmt.Errorf("saving new alert to PostgreSQL database: %w", err)
+		}
+	}
 	// zatím přeskočíme vzdálenostní výpočet.
-	// TODO: Dokončit vzdálenostní výpočet - lifycycle management.
+	// TODO: Dokončit vzdálenostní výpočet - lifecycle management.
 	return nil
 }

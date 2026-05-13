@@ -16,6 +16,7 @@ type AlertType string
 const (
 	AlertTemperatureMax AlertType = "temperature_exceeded_max_limit"
 	AlertTemperatureMin AlertType = "temperature_exceeded_min_limit"
+	AlertHumidityMax    AlertType = "humidity_exceeded_max_limit"
 	AlertUnlocked       AlertType = "container_unlocked"
 	AlertMaintenance    AlertType = "maintenance_required"
 )

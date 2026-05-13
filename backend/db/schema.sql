@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS assets (
     name            TEXT NOT NULL,
     max_temperature DOUBLE PRECISION NOT NULL, -- business pravidlo: horní teplotní limit (°C)
     min_temperature DOUBLE PRECISION NOT NULL, -- business pravidlo: dolní teplotní limit (°C)
+    max_humidity    DOUBLE PRECISION NOT NULL, -- business pravidlo: maximální povolená relativní vlhkost (%)
     status          TEXT NOT NULL DEFAULT 'new', -- životní cyklus: new → active → maintenance → decommissioned
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

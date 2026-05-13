@@ -47,8 +47,8 @@ func NewPostgresRepo(ctx context.Context, connStr string) (*PostgresRepo, error)
 
 // SaveAsset uloží do PostgreSQL databáze jeden Asset (aktivum)
 func (pgRepo *PostgresRepo) SaveAsset(ctx context.Context, asset domain.Asset) error {
-	_, err := pgRepo.PostgresPool.Exec(ctx, "INSERT INTO assets (id, name, max_temperature, min_temperature, status, created_at) values ($1, $2, $3, $4, $5, $6)",
-		asset.ID, asset.Name, asset.MaxTemperature, asset.MinTemperature, asset.Status, asset.CreatedAt)
+	_, err := pgRepo.PostgresPool.Exec(ctx, "INSERT INTO assets (id, name, max_temperature, min_temperature, max_humidity, status, created_at) values ($1, $2, $3, $4, $5, $6, $7)",
+		asset.ID, asset.Name, asset.MaxTemperature, asset.MinTemperature, asset.MaxHumidity, asset.Status, asset.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("saving asset to PostgreSQL: %w", err)
 	}
@@ -81,7 +81,7 @@ func (pgRepo *PostgresRepo) SaveAlert(ctx context.Context, alert domain.Alert) e
 func (pgRepo *PostgresRepo) ListAssets(ctx context.Context) ([]domain.Asset, error) {
 	var assets []domain.Asset
 
-	rows, err := pgRepo.PostgresPool.Query(ctx, "SELECT id, name, max_temperature, min_temperature, status, created_at FROM assets")
+	rows, err := pgRepo.PostgresPool.Query(ctx, "SELECT id, name, max_temperature, min_temperature, max_humidity, status, created_at FROM assets")
 	if err != nil {
 		return nil, fmt.Errorf("querying all assets: %w", err)
 	}
@@ -91,7 +91,7 @@ func (pgRepo *PostgresRepo) ListAssets(ctx context.Context) ([]domain.Asset, err
 	// neboli while rows.Next() == true
 	for rows.Next() {
 		var a domain.Asset
-		err := rows.Scan(&a.ID, &a.Name, &a.MaxTemperature, &a.MinTemperature, &a.Status, &a.CreatedAt)
+		err := rows.Scan(&a.ID, &a.Name, &a.MaxTemperature, &a.MinTemperature, &a.MaxHumidity, &a.Status, &a.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("scanning row into help variable: %w", err)
 		}
@@ -180,10 +180,10 @@ func (pgRepo *PostgresRepo) ListAllAlertsForAsset(ctx context.Context, assetID s
 
 // GetAssetByID získá z PostgreSQL databáze jeden konkrétní Asset (aktivum) podle předaného assetID
 func (pgRepo *PostgresRepo) GetAssetByID(ctx context.Context, assetID string) (*domain.Asset, error) {
-	row := pgRepo.PostgresPool.QueryRow(ctx, "SELECT id, name, max_temperature, mit_temperature, status, created_at FROM asets WHERE id = $1", assetID)
+	row := pgRepo.PostgresPool.QueryRow(ctx, "SELECT id, name, max_temperature, min_temperature, max_humidity, status, created_at FROM assets WHERE id = $1", assetID)
 
 	var a domain.Asset
-	err := row.Scan(&a.ID, &a.Name, &a.MaxTemperature, &a.MinTemperature, &a.Status, &a.CreatedAt)
+	err := row.Scan(&a.ID, &a.Name, &a.MaxTemperature, &a.MinTemperature, &a.MaxHumidity, &a.Status, &a.CreatedAt)
 	if err != nil {
 		// V SQL je "záznam nenalezen" validní výsledek - ne chyba aplikace.
 		if errors.Is(err, pgx.ErrNoRows) { // pokud je Error "no rows" - nezískali jsme z PostgeSQL žádné řádky

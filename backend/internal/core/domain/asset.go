@@ -31,15 +31,17 @@ const (
 )
 
 // Asset reprezentuje jedno firemní aktivum (přepravní lodní kontejner)
-// Proč MaxTemperature a MinTemperature zde: nejsou to konfigurační hodnoty služby,
+// Proč MaxTemperature, MinTemperature a MaxHumidity zde: nejsou to konfigurační hodnoty služby,
 // je to business pravidlo konkrétního kontejneru (aktiva).
 // Kontejner s vakcínami má max 8°C a min 2°C (běžné chlazené vakcíny), kontejner s elektronikou zase jiné.
-// Toto pravidlo patří do doménové vrstvy, ne do Processor Service. Processor Service ho jen bude číst a porovnávat.
+// MaxHumidity: vysoká vlhkost poškozuje elektroniku i vakcíny - každé aktivum má vlastní limit (%).
+// Tato pravidla patří do doménové vrstvy, ne do Processor Service. Processor Service je jen čte a porovnává.
 type Asset struct {
 	ID             string // Zde string typ, protože budeme používat UUID, to generujeme v aplikaci, ne v Databázi
 	Name           string
 	MaxTemperature float64
 	MinTemperature float64
+	MaxHumidity    float64 // business pravidlo: maximální povolená relativní vlhkost (%)
 	Status         AssetStatus
 	CreatedAt      time.Time
 }
