@@ -15,7 +15,7 @@ import (
 // ---------------------------------------------------------------------------------------------------------
 // Proč tato vrstva existuje:
 // Handler (gRPC) přijme data a potřebuje je zpracovat.
-// MohlI bychom logiku psát přímo v handleru — ale pak by handler věděl o NATS, o Postgres, o business pravidlech.
+// Mohli bychom logiku psát přímo v handleru — ale pak by handler věděl o NATS, o Postgres, o business pravidlech.
 // Místo toho handler zavolá service, která zná jen business logiku a komunikuje přes interfaces.
 // Toto je Use Case vrstva z Clean Architecture.
 // ---------------------------------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ func (ingestService *IngestionServiceImpl) IngestTelemetry(ctx context.Context, 
 	if telemetry.Latitude > 90 || telemetry.Latitude < -90 {
 		return fmt.Errorf("ingesting telemetry, latitude is a nonsensical value")
 	}
-	if telemetry.Longitude > 100 || telemetry.Longitude < -100 {
+	if telemetry.Longitude > 180 || telemetry.Longitude < -180 {
 		return fmt.Errorf("ingesting telemetry, longitude is a nonsensical value")
 	}
 
