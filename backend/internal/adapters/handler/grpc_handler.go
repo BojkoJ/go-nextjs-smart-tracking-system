@@ -17,6 +17,12 @@ import (
 // Handler je vstupní brána systému - přijímá data z vnějšku (Simulator) a předává dovnitř (service).
 // Je to adaptér, který překládá mezi gRPC světem  (Protobuf structs) a doménovým světem (domain structs).
 // Nic za touto hranicí nesmí vidět *pb.TelemetryRequest.
+//
+// Proč zde nevytváříme goroutiny pro paralelní zpracování:
+// gRPC runtime v Go spouští každý příchozí request automaticky ve vlastní goroutině.
+// Když 50 goroutin Simulatoru volá SendTelemetry paralelně, gRPC server spustí 50 paralelních volání
+// tohoto handleru - každé ve své goroutině, bez jediného řádku navíc.
+// Proto musí být IngestionService goroutine-safe (NATSClient.PublishMessage je thread-safe by design).
 // ---------------------------------------------------------------------------------------------------------
 
 type GRPCHandler struct {
