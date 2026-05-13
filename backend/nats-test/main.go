@@ -11,6 +11,7 @@ import (
 func main() {
 	// máme běžící pody s NATS Jetstreamem, dáme si pro testovací účely port forward:
 	// kubectl port-forward -n infrastructure svc/nats-server 4222:4222
+	// kubectl --kubeconfig=k3d-config.yaml port-forward -n infrastructure svc/nats-server 4222:4222
 	// tímto se připojíme k NATS serveru, který běží v k3s clusteru, přes localhost:4222
 
 	// máme port-forwarding z localhost:4222 do nats-serveru, který běží v k3s clusteru

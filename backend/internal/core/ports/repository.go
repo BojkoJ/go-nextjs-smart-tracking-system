@@ -27,20 +27,20 @@ import (
 
 // AssetRepository drží operace nad Asset Entitou
 type AssetRepository interface {
-	Save(ctx context.Context, asset domain.Asset) error                 // metoda pro uložení jednoho aktiva
-	GetByID(ctx context.Context, assetID string) (*domain.Asset, error) // metoda pro načtení jednoho aktiva podle ID
-	List(ctx context.Context) ([]domain.Asset, error)                   // metoda pro načtení všech aktiv
+	SaveAsset(ctx context.Context, asset domain.Asset) error                 // metoda pro uložení jednoho aktiva
+	GetAssetByID(ctx context.Context, assetID string) (*domain.Asset, error) // metoda pro načtení jednoho aktiva podle ID
+	ListAssets(ctx context.Context) ([]domain.Asset, error)                  // metoda pro načtení všech aktiv
 }
 
 // TelemetryRepository drží operace nad TelemetryData Entitou
 type TelemetryRepository interface {
-	Save(ctx context.Context, telemetry domain.TelemetryData) error                  // metoda pro uložení jednoho záznamu telemetrie
-	LoadLast(ctx context.Context, assedID string) (*domain.TelemetryData, error)     //metoda pro načtení posledního záznamu telemetrie pro dané aktivum
-	LoadHistory(ctx context.Context, assetID string) ([]domain.TelemetryData, error) // metoda pro načtení historie
+	SaveTelemetry(ctx context.Context, telemetry domain.TelemetryData) error                  // metoda pro uložení jednoho záznamu telemetrie
+	GetLastTelemetry(ctx context.Context, assetID string) (*domain.TelemetryData, error)      //metoda pro načtení posledního záznamu telemetrie pro dané aktivum
+	ListTelemetryHistory(ctx context.Context, assetID string) ([]domain.TelemetryData, error) // metoda pro načtení historie
 }
 
 type AlertRepository interface {
-	Save(ctx context.Context, alert domain.Alert) error
-	List(ctx context.Context) ([]domain.Alert, error)
-	GetAllForAsset(ctx context.Context, assetID string) ([]domain.Alert, error)
+	SaveAlert(ctx context.Context, alert domain.Alert) error
+	ListAlerts(ctx context.Context) ([]domain.Alert, error)
+	ListAllAlertsForAsset(ctx context.Context, assetID string) ([]domain.Alert, error)
 }

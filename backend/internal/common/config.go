@@ -41,10 +41,10 @@ func Load() (*Config, error) {
 	// Pro nepovinné pole pouze dáme default value
 
 	if cfg.NATSUrl == "" {
-		return nil, fmt.Errorf("ERROR: Couldn't find Address of NATS Server Enviroment Variable")
+		return nil, fmt.Errorf("NATS_URL Envirloment Variable is required")
 	}
 	if cfg.PostgresURL == "" {
-		return nil, fmt.Errorf("ERROR: Couldn't find Connection String to PostgreSQL Enviroment Variable")
+		return nil, fmt.Errorf("POSTGRES_URL Envirloment Variable is required")
 	}
 	// Default values:
 	if cfg.GRPCPort == "" {
