@@ -284,11 +284,19 @@ func main() {
 	logger := common.NewLogger("simulator")
 	logger.Info("Simulator Microservice starting", "containers", 50)
 
+	// načteme konfiguraci z environment proměnných (12-Factor App princip č.3)
+	// Load() selže pokud chybí povinné proměnné NATS_URL nebo POSTGRES_URL
+	config, err := common.Load()
+	if err != nil {
+		logger.Error("failed to load config", "error", err)
+		os.Exit(1)
+	}
+
 	// místo deprecated grpc.Dial použijeme grpc.NewClient()
 	// grpc.NewClient má lazy connection - nekontroluje dostupnost serveru, jen nakonfiguruje klienta.
 	// Skutečné připojení proběhne až při prvním SendTelemetry callu.
 	connection, err := grpc.NewClient(
-		"localhost:50051",
+		config.IngestAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		// druhý parametr říká: "nechci TLS, protože komunikace probíhá lokálně a nepotřebujeme šifrování, což zjednodušuje nastavení a vývoj"
 	)

@@ -24,6 +24,7 @@ type Config struct {
 	PostgresURL string // Connection String pro Postrges
 	GRPCPort    string // port, na kterém Ingest Service poslouchá gRPC
 	HTTPPort    string // port, na kterém Query Service poslouchá HTTP
+	IngestAddr  string
 }
 
 func Load() (*Config, error) {
@@ -34,6 +35,7 @@ func Load() (*Config, error) {
 		PostgresURL: os.Getenv("POSTGRES_URL"),
 		GRPCPort:    os.Getenv("GRPC_PORT"),
 		HTTPPort:    os.Getenv("HTTP_PORT"),
+		IngestAddr:  os.Getenv("INGEST_ADDR"),
 	}
 
 	// os.Getenv vrátí prázdný string pokud proměnná neexistuje.
@@ -52,6 +54,9 @@ func Load() (*Config, error) {
 	}
 	if cfg.HTTPPort == "" {
 		cfg.HTTPPort = "8080"
+	}
+	if cfg.IngestAddr == "" {
+		cfg.IngestAddr = "localhost:50051"
 	}
 
 	return cfg, nil
