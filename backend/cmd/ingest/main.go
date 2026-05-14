@@ -58,7 +58,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// DI: vytvoříme IngestionService a předáme mu NATS klienta jako EventProducer interface
+	// Dependency Injection: vytvoříme IngestionService a předáme mu NATS klienta jako EventProducer interface
 	// service neví o konkrétním NATSClient - zná jen interface ports.EventProducer
 	ingestionService := services.NewIngestionService(natsClient)
 
