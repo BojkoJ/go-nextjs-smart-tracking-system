@@ -44,49 +44,6 @@ variable "kubeapi_host_port" {
   default = 6445
 }
 
-// -------- Pro deployment: -----------------
-variable "k3s_deployment_name" {
-  type = string
-  description = "Název deploymentu uvnitř kubernetes"
-  default = "hello-world-deployment"
-}
-
-variable "k3s_deployment_replicas_num" {
-  type = number
-  description = "Počet replik v hello_world deploymentu"
-  default = 2
-}
-
-variable "k3s_deployment_container_label" {
-  type = string
-  description = "Label kontejnerů, které produkuje náš hello world Nginx deployment"
-  default = "hello-world"
-}
-
-variable "k3s_deployment_container_name" {
-  type = string
-  description = "Jméno kontejnerů, které produkuje náš hello world Nginx deployment"
-  default = "hello-container"
-}
-
-variable "k3s_deployment_container_image" {
-  type = string
-  description = "Image, který se pro kontejnery stáhne a nainstaluje"
-  default = "nginxdemos/hello"
-}
-
-variable "k3s_deployment_container_port" {
-  type = number
-  description = "Port, na kterém poslouchá aplikace uvnitř kontejneru produkovaném deploymentem"
-  default = 80
-}
-
-// -------- Pro service: -----------------
-variable "k3s_service_name" {
-  type = string
-  description = "Název služby (serivce) univtř kubernetes"
-  default = "hello-world-service"
-}
 
 // -------- Pro namespaces: -----------------
 variable "k3s_namespace_infra_name" {

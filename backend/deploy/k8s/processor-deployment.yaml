@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+# pro processor není service YAML - processor jen konzumuje NATS, nikdo se na něj nepřipojuje
+metadata:
+  name: processor
+  namespace: tracking-system
+  labels:
+    app: processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: processor
+  template:
+    metadata:
+      labels:
+        app: processor
+    spec:
+      containers:
+        - name: processor
+          image: processor:latest
+          imagePullPolicy: Never
+          envFrom:
+            - configMapRef:
+                name: tracking-config
+            - secretRef:
+                name: tracking-secret
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

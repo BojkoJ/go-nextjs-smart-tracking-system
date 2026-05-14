@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tracking-config
+  namespace: tracking-system
+data:
+  NATS_URL: "nats://nats-server.infrastructure.svc.cluster.local:4222"
+  GRPC_PORT: "50051"
+  HTTP_PORT: "8080"
+  INGEST_ADDR: "ingest-service.tracking-system.svc.cluster.local:50051"
