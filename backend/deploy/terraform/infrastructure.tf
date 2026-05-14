@@ -45,6 +45,9 @@ resource "helm_release" "postgresql" {
   chart = var.helm_release_postgres_chart
   // tímhle terraformu řekneme: "instaluj to tam, kde jsi vytvořil namespace infrastructure"
   namespace = kubernetes_namespace.infra.metadata[0].name
+  // Proč 600: Bitnami PostgreSQL image (~130 MB) trvá na Docker Hub 4-5 minut stáhnout při prvním pulu.
+  // Default Terraform timeout je 300s → context deadline exceeded před Ready stavem podu.
+  timeout   = 600
 
   // Bitname PostgreSQL chart potřebuje vědět credentials a nastavení.
   set = [

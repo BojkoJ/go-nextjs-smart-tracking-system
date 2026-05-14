@@ -10,9 +10,9 @@ resource "helm_release" "argocd" {
 
   // ArgoCD je velká aplikace. Spouští mnoho podů.
   // wait = true říká Terraform Helm provideru: "nekonči, dokud nejsou všechny pody Read"
-  // timeout = 300 říká: "čekej max 300 sekund".
+  // timeout = 480 říká: "čekej max 480 sekund".
   // Bez těctho polí by Terraform řekl "hotovo" hned po odeslání manifestů do kubernetes, i když ArgoCD ještě startuje.
-  timeout = 300
+  timeout = 480
   wait = true
 
   // ArgoCD nepotřebuje žádné set hodnoty, výchozí konfigurace je pro nás dostačující
