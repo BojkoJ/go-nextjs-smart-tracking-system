@@ -7,6 +7,7 @@ import (
 	"math"
 	"time"
 
+	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/common"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/domain"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	"github.com/google/uuid"
@@ -64,6 +65,12 @@ func NewProcessingService(assetRepo ports.AssetRepository, telemetryRepo ports.T
 }
 
 func (processService *ProcessingServiceImpl) ProcessTelemetry(ctx context.Context, telemetry domain.TelemetryData) error {
+	start := time.Now()
+	defer func() {
+		common.ProcessingDuration.Observe(time.Since(start).Seconds())
+		common.TelemetryProcessed.Inc()
+	}()
+
 	// 1) načtení assetu
 	asset, err := processService.assetRepo.GetAssetByID(ctx, telemetry.AssetID)
 	if err != nil && asset == nil {
@@ -93,6 +100,7 @@ func (processService *ProcessingServiceImpl) ProcessTelemetry(ctx context.Contex
 		if err != nil {
 			return fmt.Errorf("saving new alert to PostgreSQL database: %w", err)
 		}
+		common.AlertsGenerated.WithLabelValues(string(domain.AlertTemperatureMax)).Inc()
 	}
 	if telemetry.Temperature < asset.MinTemperature {
 		alert := domain.Alert{
@@ -106,6 +114,7 @@ func (processService *ProcessingServiceImpl) ProcessTelemetry(ctx context.Contex
 		if err != nil {
 			return fmt.Errorf("saving new alert to PostgreSQL database: %w", err)
 		}
+		common.AlertsGenerated.WithLabelValues(string(domain.AlertTemperatureMin)).Inc()
 	}
 	if !telemetry.IsLocked {
 		alert := domain.Alert{
@@ -119,6 +128,7 @@ func (processService *ProcessingServiceImpl) ProcessTelemetry(ctx context.Contex
 		if err != nil {
 			return fmt.Errorf("saving new alert to PostgreSQL database: %w", err)
 		}
+		common.AlertsGenerated.WithLabelValues(string(domain.AlertUnlocked)).Inc()
 	}
 	if telemetry.Humidity > asset.MaxHumidity {
 		alert := domain.Alert{

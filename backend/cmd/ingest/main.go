@@ -74,6 +74,9 @@ func main() {
 	// handler překládá pb.TelemetryRequest -> domain.TelemetryData a volá service
 	grpcHandler := handler.NewGRPCHandler(ingestionService, logger)
 
+	// metrics server na :9090 — Prometheus scrapeuje /metrics
+	go common.StartMetricsServer("9090")
+
 	// vytvoříme TCP listener na portu z konfigurace (default: 50051)
 	// net.Listen odděluje Listen od Serve - ověříme dostupnost portu před spuštěním serveru
 	listener, err := net.Listen("tcp", ":"+config.GRPCPort)

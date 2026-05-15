@@ -7,6 +7,7 @@ import (
 
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // ---------------------------------------------------------------------------------------------------------
@@ -52,6 +53,7 @@ func (handler *HTTPHandler) Routes() http.Handler {
 	r.Get("/assets/{id}/telemetry/history", handler.listTelemetryHistory)
 	r.Get("/alerts", handler.listAlerts)
 	r.Get("/assets/{id}/alerts", handler.listAllAlertsForAsset)
+	r.Handle("/metrics", promhttp.Handler())
 
 	return r
 }

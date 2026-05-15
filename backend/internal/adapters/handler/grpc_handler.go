@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/common"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/domain"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	pb "github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/proto"
@@ -75,10 +76,10 @@ func (handler *GRPCHandler) SendTelemetry(ctx context.Context, request *pb.Telem
 	err := handler.service.IngestTelemetry(ctx, telemetry)
 	if err != nil {
 		handler.logger.Error("error ingesting telemetry", "error", err)
-		// nevracíme jako chybu zabalme do response
-		// validation error není gRPC protocol error: simulator má vědět, že data jsou špatná, ne že komunikace selhala
+		common.IngestRequests.WithLabelValues("false").Inc()
 		return &pb.TelemetryResponse{Success: false, Message: err.Error()}, nil
 	}
 
+	common.IngestRequests.WithLabelValues("true").Inc()
 	return &pb.TelemetryResponse{Success: true, Message: "OK"}, nil
 }

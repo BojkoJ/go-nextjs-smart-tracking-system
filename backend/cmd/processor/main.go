@@ -58,6 +58,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// metrics server na :9090 — Prometheus scrapeuje /metrics
+	go common.StartMetricsServer("9090")
+
 	// vytvoříme PostgreSQL repozitář - adaptér pro komunikaci s databází
 	// context.Background() je vhodný pro inicializaci (není vázaný na request)
 	// po vytvoření poolu každá metoda repozitáře dostane svůj vlastní ctx z handleru/consumeru
