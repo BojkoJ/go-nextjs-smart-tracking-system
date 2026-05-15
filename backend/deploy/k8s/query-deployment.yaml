@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: query
-          image: ghcr.io/bojkoj/query:8a72c7a
+          image: ghcr.io/bojkoj/query:42427fb
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
