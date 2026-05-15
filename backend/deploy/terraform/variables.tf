@@ -115,6 +115,13 @@ variable "postgres_password" {
   sensitive = true // Terraform toto pole skryje v logu, nikdy tuto hodnotu nebude vypisovat do terminálu.
 }
 
+// -------- Pro observability stack: -----------------
+variable "grafana_password" {
+  type        = string
+  description = "Admin heslo pro Grafanu"
+  sensitive   = true
+}
+
 // -------- Pro ArgoCD: -----------------
 variable "helm_release_argocd_name" {
   type = string

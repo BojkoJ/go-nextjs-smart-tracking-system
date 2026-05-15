@@ -44,7 +44,7 @@ spec:
 
         # sed -i nahradí image tag v každém deployment souboru.
         # Pattern: "ghcr.io/bojkoj/<service>:<cokoli>" → "ghcr.io/bojkoj/<service>:<nový-tag>"
-        for SERVICE in ingest processor query simulator; do
+        for SERVICE in ingest processor query simulator frontend; do
           FILE="${MANIFESTS}/${SERVICE}-deployment.yaml"
           sed -i "s|${REGISTRY}/${SERVICE}:.*|${REGISTRY}/${SERVICE}:${TAG}|g" "${FILE}"
           echo "Updated ${FILE}: ${REGISTRY}/${SERVICE}:${TAG}"
@@ -54,7 +54,8 @@ spec:
         git add ${MANIFESTS}/ingest-deployment.yaml \
                 ${MANIFESTS}/processor-deployment.yaml \
                 ${MANIFESTS}/query-deployment.yaml \
-                ${MANIFESTS}/simulator-deployment.yaml
+                ${MANIFESTS}/simulator-deployment.yaml \
+                ${MANIFESTS}/frontend-deployment.yaml
 
         # Commitnout jen pokud jsou skutečné změny (idempotentní — druhý run se stejným SHA nepushne duplikát)
         if git diff --cached --quiet; then

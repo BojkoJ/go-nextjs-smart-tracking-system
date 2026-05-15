@@ -7,7 +7,7 @@ spec:
   params:
     - name: service
       type: string
-      description: "Název služby: ingest | processor | query | simulator"
+      description: "Název služby: ingest | processor | query | simulator | frontend"
     - name: image-tag
       type: string
       description: "Git short SHA z task-git-clone (7 znaků)"
@@ -15,6 +15,18 @@ spec:
       type: string
       description: "Container registry prefix"
       default: ghcr.io/bojkoj
+    - name: dockerfile
+      type: string
+      description: "Relativní cesta k Dockerfile od kořene workspace"
+      default: backend/Dockerfile
+    - name: context
+      type: string
+      description: "Relativní cesta ke kontextu buildu od kořene workspace"
+      default: backend
+    - name: build-args
+      type: string
+      description: "Volitelný --build-arg pro Kaniko (prázdný = žádný)"
+      default: ""
   workspaces:
     - name: source
       description: Naklonovaný repozitář (Kaniko čte Dockerfile + kontext)
@@ -29,12 +41,9 @@ spec:
       # :latest je OK — Kaniko je stabilní, breaking changes jsou vzácné
       image: gcr.io/kaniko-project/executor:latest
       args:
-        # Dockerfile je v kořenu backend/ a přijímá ARG SERVICE
-        - --dockerfile=$(workspaces.source.path)/backend/Dockerfile
-        # Kontext = celý backend/ (COPY . . v Dockerfile)
-        - --context=$(workspaces.source.path)/backend
-        # ARG SERVICE v Dockerfile určuje který microservice se buildí
-        - --build-arg=SERVICE=$(params.service)
+        - --dockerfile=$(workspaces.source.path)/$(params.dockerfile)
+        - --context=$(workspaces.source.path)/$(params.context)
+        - --build-arg=$(params.build-args)
         # Pushujeme dvě tagy: SHA tag (immutable) + latest (mutable pointer)
         - --destination=$(params.registry)/$(params.service):$(params.image-tag)
         - --destination=$(params.registry)/$(params.service):latest

@@ -17,3 +17,9 @@ resource "kubernetes_namespace" "argocd" {
     name = var.k3s_namespace_argocd_name
   }
 }
+
+resource "kubernetes_namespace" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+}

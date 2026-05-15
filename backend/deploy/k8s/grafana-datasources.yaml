@@ -22,3 +22,9 @@ data:
             datasourceUid: prometheus
           nodeGraph:
             enabled: true
+      - name: Loki
+        type: loki
+        uid: loki
+        url: http://loki.monitoring.svc.cluster.local:3100
+        access: proxy
+        isDefault: false

@@ -1,19 +1,32 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: query-ingress
+  name: tracking-ingress
   namespace: tracking-system
   annotations:
-    # Traefik je default ingress controller v k3s
     kubernetes.io/ingress.class: traefik
 spec:
   rules:
     - http:
         paths:
-          - path: /
+          - path: /assets
             pathType: Prefix
             backend:
               service:
                 name: query-service
                 port:
                   number: 8080
+          - path: /alerts
+            pathType: Prefix
+            backend:
+              service:
+                name: query-service
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 3000

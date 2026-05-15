@@ -33,6 +33,66 @@ resource "helm_release" "nats" {
   ]
 }
 
+// -------- Observability stack --------
+
+// Prometheus + Grafana (kube-prometheus-stack = Prometheus Operator + Grafana + AlertManager + exporters)
+resource "helm_release" "kube_prometheus_stack" {
+  name       = "kube-prometheus-stack"
+  repository = "https://prometheus-community.github.io/helm-charts"
+  chart      = "kube-prometheus-stack"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+  timeout    = 600
+
+  set = [
+    {
+      name  = "grafana.adminPassword"
+      value = var.grafana_password
+    },
+    {
+      name  = "grafana.service.type"
+      value = "NodePort"
+    },
+    {
+      name  = "prometheus.service.type"
+      value = "NodePort"
+    }
+  ]
+}
+
+// Grafana Tempo — distribuovaný tracing backend, přijímá OTLP přes gRPC na portu 4317
+resource "helm_release" "tempo" {
+  name       = "tempo"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "tempo"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+
+  set = [
+    {
+      name  = "tempo.receivers.otlp.protocols.grpc.endpoint"
+      value = "0.0.0.0:4317"
+    }
+  ]
+}
+
+// Loki + Promtail — agregace logů ze všech podů (Promtail = DaemonSet scraping /var/log/pods)
+resource "helm_release" "loki_stack" {
+  name       = "loki"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "loki-stack"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
+
+  set = [
+    {
+      name  = "grafana.enabled"
+      value = "false" // Grafana již běží v kube-prometheus-stack
+    },
+    {
+      name  = "prometheus.enabled"
+      value = "false" // Prometheus již běží v kube-prometheus-stack
+    }
+  ]
+}
+
 // definujeme si PostgreSQL přes Helm
 // Jakmile Helm nasadíme, k8s service pro PostgreSQL bude dostupná pod DNS jménem: postgresql.infrastructure.svc.cluster.local:5432
 // Formát je: <helm-release-name>.<namespace>.svc.cluster.local:<port>. Toto budeme používat jako connection string v Go aplikacích.

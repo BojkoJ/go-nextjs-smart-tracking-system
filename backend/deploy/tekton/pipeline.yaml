@@ -61,10 +61,11 @@ spec:
         - name: service
           value: ingest
         - name: image-tag
-          # Výsledek z git-clone Task — short SHA z git rev-parse
           value: $(tasks.git-clone.results.commit-sha)
         - name: registry
           value: $(params.registry)
+        - name: build-args
+          value: SERVICE=ingest
       workspaces:
         - name: source
           workspace: shared-source
@@ -83,6 +84,8 @@ spec:
           value: $(tasks.git-clone.results.commit-sha)
         - name: registry
           value: $(params.registry)
+        - name: build-args
+          value: SERVICE=processor
       workspaces:
         - name: source
           workspace: shared-source
@@ -101,6 +104,8 @@ spec:
           value: $(tasks.git-clone.results.commit-sha)
         - name: registry
           value: $(params.registry)
+        - name: build-args
+          value: SERVICE=query
       workspaces:
         - name: source
           workspace: shared-source
@@ -119,6 +124,30 @@ spec:
           value: $(tasks.git-clone.results.commit-sha)
         - name: registry
           value: $(params.registry)
+        - name: build-args
+          value: SERVICE=simulator
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-credentials
+          workspace: docker-credentials
+
+    - name: build-push-frontend
+      taskRef:
+        name: build-push
+      runAfter:
+        - run-tests
+      params:
+        - name: service
+          value: frontend
+        - name: image-tag
+          value: $(tasks.git-clone.results.commit-sha)
+        - name: registry
+          value: $(params.registry)
+        - name: dockerfile
+          value: frontend/Dockerfile
+        - name: context
+          value: frontend
       workspaces:
         - name: source
           workspace: shared-source
@@ -129,12 +158,13 @@ spec:
     - name: update-manifest
       taskRef:
         name: update-manifest
-      # Čeká na VŠECHNY 4 build-push tasks — všechny images musí být v registry
+      # Čeká na VŠECH 5 build-push tasks — všechny images musí být v registry
       runAfter:
         - build-push-ingest
         - build-push-processor
         - build-push-query
         - build-push-simulator
+        - build-push-frontend
       params:
         - name: image-tag
           value: $(tasks.git-clone.results.commit-sha)
