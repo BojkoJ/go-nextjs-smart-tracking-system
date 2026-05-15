@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: simulator
-          image: ghcr.io/bojkoj/simulator:9786c35
+          image: ghcr.io/bojkoj/simulator:8a72c7a
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:

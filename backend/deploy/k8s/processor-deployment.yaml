@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: processor
-          image: ghcr.io/bojkoj/processor:9786c35
+          image: ghcr.io/bojkoj/processor:8a72c7a
           imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
