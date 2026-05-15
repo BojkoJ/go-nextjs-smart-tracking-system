@@ -39,3 +39,9 @@ spec:
               port: 50051
             initialDelaySeconds: 5
             periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 50051
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            failureThreshold: 3

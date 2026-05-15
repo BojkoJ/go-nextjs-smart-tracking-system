@@ -40,3 +40,12 @@ spec:
               port: 8080
             initialDelaySeconds: 5
             periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /assets
+              port: 8080
+            # Delší delay než readiness — pod musí mít čas navázat DB spojení před prvním liveness checkem
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            # 3 selhání × 20s = 60s tolerance před restartem (méně agresivní než readiness)
+            failureThreshold: 3
