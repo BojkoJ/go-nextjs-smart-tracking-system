@@ -8,3 +8,4 @@ data:
   GRPC_PORT: "50051"
   HTTP_PORT: "8080"
   INGEST_ADDR: "ingest-service.tracking-system.svc.cluster.local:50051"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "tempo.monitoring.svc.cluster.local:4317"
