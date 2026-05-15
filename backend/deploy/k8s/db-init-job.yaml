@@ -1,0 +1,38 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-init
+  namespace: tracking-system
+  annotations:
+    # PreSync = ArgoCD spustí tento Job PŘED aplikováním ostatních manifestů
+    argocd.argoproj.io/hook: PreSync
+    # HookSucceeded = ArgoCD smaže Job po úspěšném dokončení (neshromažďují se staré Joby)
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  # backoffLimit: 3 = Job se pokusí 3× při selhání (síťový výpadek, postgres restart)
+  backoffLimit: 3
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: db-init
+          # postgres:16-alpine obsahuje psql client, žádný custom image není potřeba
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              psql "$POSTGRES_URL" -f /sql/schema.sql && psql "$POSTGRES_URL" -f /sql/seed.sql
+          env:
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tracking-secret
+                  key: POSTGRES_URL
+          volumeMounts:
+            - name: sql-files
+              mountPath: /sql
+      volumes:
+        - name: sql-files
+          configMap:
+            name: db-init-sql
