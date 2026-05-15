@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: run-tests
+  namespace: tracking-system
+spec:
+  workspaces:
+    - name: source
+      description: Naklonovaný repozitář
+    - name: go-cache
+      description: Go module cache (GOPATH) — urychluje opakované runy
+  steps:
+    - name: test
+      image: golang:1.25-alpine
+      workingDir: $(workspaces.source.path)/backend
+      env:
+        # GOPATH přesměrujeme do go-cache workspace → moduly se neznovu stahují
+        - name: GOPATH
+          value: $(workspaces.go-cache.path)/gopath
+        - name: GOCACHE
+          value: $(workspaces.go-cache.path)/gocache
+        # CGO_ENABLED=0 = statický binary, není potřeba gcc (Alpine nemá gcc)
+        - name: CGO_ENABLED
+          value: "0"
+      script: |
+        #!/bin/sh
+        set -e
+
+        go test ./...

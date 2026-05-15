@@ -1,0 +1,33 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  # generateName = Tekton přidá unikátní suffix (ci-pipeline-run-xxxxx)
+  # takže každý manuální run vytvoří nový objekt bez konfliktu
+  generateName: ci-pipeline-run-
+  namespace: tracking-system
+spec:
+  pipelineRef:
+    name: ci-pipeline
+  taskRunTemplate:
+    serviceAccountName: tekton-sa
+  params:
+    - name: git-url
+      value: https://github.com/BojkoJ/go-nextjs-smart-tracking-system.git
+    - name: git-revision
+      value: master
+    - name: registry
+      value: ghcr.io/bojkoj
+  workspaces:
+    # shared-source: PVC sdílený mezi všemi Tasks v Pipeline
+    - name: shared-source
+      persistentVolumeClaim:
+        claimName: tekton-workspace-pvc
+    # go-cache: ephemeral EmptyDir — neperzistentní mezi PipelineRuns (OK pro demo)
+    # Pro produkci: PVC pro perzistentní Go module cache
+    - name: go-cache
+      emptyDir: {}
+    # docker-credentials: Secret s ghcr.io credentials
+    # Tekton mountuje config.json z Secret klíče .dockerconfigjson
+    - name: docker-credentials
+      secret:
+        secretName: ghcr-credentials

@@ -10,3 +10,7 @@ texts
 
 .idea
 backend/deploy/k8s/secret.yaml
+
+# Tekton secrets — templates jsou OK, skutečné soubory ne
+backend/deploy/tekton/secret-ghcr.yaml
+backend/deploy/tekton/secret-git.yaml

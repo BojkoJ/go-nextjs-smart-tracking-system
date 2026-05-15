@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: processor
-          image: processor:latest
-          imagePullPolicy: Never
+          image: ghcr.io/bojkoj/processor:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: tracking-config

@@ -1,0 +1,43 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: git-clone
+  namespace: tracking-system
+spec:
+  # Params = vstupní parametry Tasku (volající Pipeline je předává při spuštění)
+  params:
+    - name: url
+      type: string
+      description: URL git repozitáře
+    - name: revision
+      type: string
+      description: Branch nebo commit SHA k naklonování
+      default: master
+  # Workspaces = sdílená úložiště mezi Tasky (PVC připojený jako volume)
+  workspaces:
+    - name: source
+      description: Kam naklonovat repozitář
+  # Results = výstupní hodnoty Tasku, které může použít jiný Task v Pipeline
+  results:
+    - name: commit-sha
+      description: SHA commitu, který byl naklonován (použijeme jako image tag)
+  steps:
+    - name: clone
+      # alpine/git = minimální Alpine image s git CLI
+      image: alpine/git:latest
+      script: |
+        #!/bin/sh
+        set -e
+
+        # Tekton cred-init automaticky nakonfiguroval ~/.gitconfig a ~/.git-credentials
+        # ze Secret "git-credentials" (viz ServiceAccount) — git push nepotřebuje heslo explicitně
+
+        # Vyčistit workspace z předchozího runu (PVC je perzistentní)
+        find $(workspaces.source.path) -mindepth 1 -delete 2>/dev/null || true
+
+        git clone --depth=1 --branch=$(params.revision) $(params.url) $(workspaces.source.path)
+        cd $(workspaces.source.path)
+
+        # Výstupní výsledek: git SHA (zkrácený na 7 znaků = standardní "short SHA")
+        # tee zapíše SHA do souboru výsledku Tektonu I na stdout pro log
+        git rev-parse --short HEAD | tr -d '\n' | tee $(results.commit-sha.path)

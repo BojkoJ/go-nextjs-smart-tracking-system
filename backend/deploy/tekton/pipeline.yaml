@@ -1,0 +1,147 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: ci-pipeline
+  namespace: tracking-system
+spec:
+  params:
+    - name: git-url
+      type: string
+      description: "HTTPS URL Git repozitáře"
+    - name: git-revision
+      type: string
+      description: "Branch nebo commit SHA"
+      default: master
+    - name: registry
+      type: string
+      description: "Container registry prefix"
+      default: ghcr.io/bojkoj
+
+  workspaces:
+    - name: shared-source
+      description: "Sdílené úložiště — git repo pro všechny Tasks"
+    - name: go-cache
+      description: "Go module + build cache"
+    - name: docker-credentials
+      description: "ghcr.io Docker config.json ze Secret"
+
+  tasks:
+    # ── Krok 1: Naklonuj repozitář ──────────────────────────────────────────
+    - name: git-clone
+      taskRef:
+        name: git-clone
+      params:
+        - name: url
+          value: $(params.git-url)
+        - name: revision
+          value: $(params.git-revision)
+      workspaces:
+        - name: source
+          workspace: shared-source
+
+    # ── Krok 2: Spusť testy ─────────────────────────────────────────────────
+    - name: run-tests
+      taskRef:
+        name: run-tests
+      runAfter:
+        - git-clone
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: go-cache
+          workspace: go-cache
+
+    # ── Krok 3a-d: Build + Push (paralelně pro všechny 4 služby) ────────────
+    - name: build-push-ingest
+      taskRef:
+        name: build-push
+      runAfter:
+        - run-tests
+      params:
+        - name: service
+          value: ingest
+        - name: image-tag
+          # Výsledek z git-clone Task — short SHA z git rev-parse
+          value: $(tasks.git-clone.results.commit-sha)
+        - name: registry
+          value: $(params.registry)
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-credentials
+          workspace: docker-credentials
+
+    - name: build-push-processor
+      taskRef:
+        name: build-push
+      runAfter:
+        - run-tests
+      params:
+        - name: service
+          value: processor
+        - name: image-tag
+          value: $(tasks.git-clone.results.commit-sha)
+        - name: registry
+          value: $(params.registry)
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-credentials
+          workspace: docker-credentials
+
+    - name: build-push-query
+      taskRef:
+        name: build-push
+      runAfter:
+        - run-tests
+      params:
+        - name: service
+          value: query
+        - name: image-tag
+          value: $(tasks.git-clone.results.commit-sha)
+        - name: registry
+          value: $(params.registry)
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-credentials
+          workspace: docker-credentials
+
+    - name: build-push-simulator
+      taskRef:
+        name: build-push
+      runAfter:
+        - run-tests
+      params:
+        - name: service
+          value: simulator
+        - name: image-tag
+          value: $(tasks.git-clone.results.commit-sha)
+        - name: registry
+          value: $(params.registry)
+      workspaces:
+        - name: source
+          workspace: shared-source
+        - name: docker-credentials
+          workspace: docker-credentials
+
+    # ── Krok 4: Aktualizuj manifesty a pushni do Gitu ────────────────────────
+    - name: update-manifest
+      taskRef:
+        name: update-manifest
+      # Čeká na VŠECHNY 4 build-push tasks — všechny images musí být v registry
+      runAfter:
+        - build-push-ingest
+        - build-push-processor
+        - build-push-query
+        - build-push-simulator
+      params:
+        - name: image-tag
+          value: $(tasks.git-clone.results.commit-sha)
+        - name: registry
+          value: $(params.registry)
+        - name: git-url
+          value: $(params.git-url)
+      workspaces:
+        - name: source
+          workspace: shared-source

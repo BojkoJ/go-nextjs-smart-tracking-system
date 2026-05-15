@@ -1,0 +1,65 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: update-manifest
+  namespace: tracking-system
+spec:
+  params:
+    - name: image-tag
+      type: string
+      description: "Nový git short SHA pro image tag"
+    - name: registry
+      type: string
+      description: "Container registry prefix"
+      default: ghcr.io/bojkoj
+    - name: git-user-name
+      type: string
+      description: "Jméno pro git commit"
+      default: "Tekton CI"
+    - name: git-user-email
+      type: string
+      description: "Email pro git commit"
+      default: "ci@tracking-system"
+    - name: git-url
+      type: string
+      description: "HTTPS URL repozitáře pro push (s credentialy z Secret)"
+  workspaces:
+    - name: source
+      description: Naklonovaný repozitář s deployment manifesty
+  steps:
+    - name: update-tags
+      image: alpine/git:latest
+      workingDir: $(workspaces.source.path)
+      script: |
+        #!/bin/sh
+        set -e
+
+        # Konfigurace git identity pro commit
+        git config user.name "$(params.git-user-name)"
+        git config user.email "$(params.git-user-email)"
+
+        REGISTRY="$(params.registry)"
+        TAG="$(params.image-tag)"
+        MANIFESTS="backend/deploy/k8s"
+
+        # sed -i nahradí image tag v každém deployment souboru.
+        # Pattern: "ghcr.io/bojkoj/<service>:<cokoli>" → "ghcr.io/bojkoj/<service>:<nový-tag>"
+        for SERVICE in ingest processor query simulator; do
+          FILE="${MANIFESTS}/${SERVICE}-deployment.yaml"
+          sed -i "s|${REGISTRY}/${SERVICE}:.*|${REGISTRY}/${SERVICE}:${TAG}|g" "${FILE}"
+          echo "Updated ${FILE}: ${REGISTRY}/${SERVICE}:${TAG}"
+        done
+
+        # Přidat změněné soubory do staging area
+        git add ${MANIFESTS}/ingest-deployment.yaml \
+                ${MANIFESTS}/processor-deployment.yaml \
+                ${MANIFESTS}/query-deployment.yaml \
+                ${MANIFESTS}/simulator-deployment.yaml
+
+        # Commitnout jen pokud jsou skutečné změny (idempotentní — druhý run se stejným SHA nepushne duplikát)
+        if git diff --cached --quiet; then
+          echo "Images already at ${TAG}, nothing to commit — skipping push"
+        else
+          git commit -m "ci: update image tags to ${TAG} [skip ci]"
+          git push $(params.git-url) HEAD:master
+        fi

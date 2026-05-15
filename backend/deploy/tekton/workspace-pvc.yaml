@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: tekton-workspace-pvc
+  namespace: tracking-system
+spec:
+  # ReadWriteOnce: PVC je připojen k jednomu Nodu najednou.
+  # Tekton Tasks v jedné Pipeline sdílejí tento PVC sekvenčně nebo paralelně na stejném Nodu.
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      # 1Gi stačí pro git checkout (~50MB) + Go modul cache + build artifacts
+      storage: 1Gi

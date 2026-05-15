@@ -1,0 +1,43 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: build-push
+  namespace: tracking-system
+spec:
+  params:
+    - name: service
+      type: string
+      description: "Název služby: ingest | processor | query | simulator"
+    - name: image-tag
+      type: string
+      description: "Git short SHA z task-git-clone (7 znaků)"
+    - name: registry
+      type: string
+      description: "Container registry prefix"
+      default: ghcr.io/bojkoj
+  workspaces:
+    - name: source
+      description: Naklonovaný repozitář (Kaniko čte Dockerfile + kontext)
+    - name: docker-credentials
+      description: >
+        Secret s Docker config.json (ghcr.io token).
+        Mountovaný jako /kaniko/.docker/config.json přes volumeMount.
+      mountPath: /kaniko/.docker
+  steps:
+    - name: build-and-push
+      # gcr.io/kaniko-project/executor = official Kaniko image
+      # :latest je OK — Kaniko je stabilní, breaking changes jsou vzácné
+      image: gcr.io/kaniko-project/executor:latest
+      args:
+        # Dockerfile je v kořenu backend/ a přijímá ARG SERVICE
+        - --dockerfile=$(workspaces.source.path)/backend/Dockerfile
+        # Kontext = celý backend/ (COPY . . v Dockerfile)
+        - --context=$(workspaces.source.path)/backend
+        # ARG SERVICE v Dockerfile určuje který microservice se buildí
+        - --build-arg=SERVICE=$(params.service)
+        # Pushujeme dvě tagy: SHA tag (immutable) + latest (mutable pointer)
+        - --destination=$(params.registry)/$(params.service):$(params.image-tag)
+        - --destination=$(params.registry)/$(params.service):latest
+        # cache-repo = Kaniko layer cache v registry (urychluje opakované buildy)
+        - --cache=true
+        - --cache-repo=$(params.registry)/kaniko-cache

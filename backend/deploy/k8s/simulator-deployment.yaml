@@ -17,8 +17,8 @@ spec:
     spec:
       containers:
         - name: simulator
-          image: simulator:latest
-          imagePullPolicy: Never
+          image: ghcr.io/bojkoj/simulator:latest
+          imagePullPolicy: IfNotPresent
           envFrom:
             - configMapRef:
                 name: tracking-config
