@@ -4,12 +4,31 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"math"
 	"time"
 
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/domain"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	"github.com/google/uuid"
 )
+
+const (
+	rotterdamLat = 51.98
+	rotterdamLon = 4.05
+	// Kontejner je považován za doručený pokud je do 50 km od přístavu Rotterdam
+	arrivalThresholdKm = 50.0
+)
+
+// haversine vrátí vzdálenost v km mezi dvěma GPS souřadnicemi
+func haversine(lat1, lon1, lat2, lon2 float64) float64 {
+	const earthRadiusKm = 6371.0
+	dLat := (lat2 - lat1) * math.Pi / 180
+	dLon := (lon2 - lon1) * math.Pi / 180
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) +
+		math.Cos(lat1*math.Pi/180)*math.Cos(lat2*math.Pi/180)*
+			math.Sin(dLon/2)*math.Sin(dLon/2)
+	return earthRadiusKm * 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+}
 
 // ---------------------------------------------------------------------------------------------------------
 //                                      SERVICES - PROCESSOR SERVICE
@@ -114,7 +133,15 @@ func (processService *ProcessingServiceImpl) ProcessTelemetry(ctx context.Contex
 			return fmt.Errorf("saving new alert to PostgreSQL database: %w", err)
 		}
 	}
-	// zatím přeskočíme vzdálenostní výpočet.
-	// TODO: Dokončit vzdálenostní výpočet - lifecycle management.
+	// Lifecycle management: pokud je asset dostatečně blízko Rotterdamu a stále aktivní → decommission
+	if asset.Status == domain.StatusActive {
+		distKm := haversine(telemetry.Latitude, telemetry.Longitude, rotterdamLat, rotterdamLon)
+		if distKm <= arrivalThresholdKm {
+			if err := processService.assetRepo.UpdateAssetStatus(ctx, asset.ID, domain.StatusDecommissioned); err != nil {
+				return fmt.Errorf("updating asset status on arrival: %w", err)
+			}
+			processService.logger.Info("asset arrived at destination, decommissioned", "assetID", asset.ID, "distanceKm", distKm)
+		}
+	}
 	return nil
 }

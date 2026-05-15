@@ -24,6 +24,9 @@ func (m *mockAssetRepo) GetAssetByID(ctx context.Context, id string) (*domain.As
 }
 func (m *mockAssetRepo) SaveAsset(_ context.Context, _ domain.Asset) error    { return nil }
 func (m *mockAssetRepo) ListAssets(_ context.Context) ([]domain.Asset, error) { return nil, nil }
+func (m *mockAssetRepo) UpdateAssetStatus(_ context.Context, _ string, _ domain.AssetStatus) error {
+	return nil
+}
 
 type mockTelemetryRepo struct {
 	saveFn func(ctx context.Context, t domain.TelemetryData) error

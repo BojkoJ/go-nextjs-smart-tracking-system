@@ -27,9 +27,10 @@ import (
 
 // AssetRepository drží operace nad Asset Entitou
 type AssetRepository interface {
-	SaveAsset(ctx context.Context, asset domain.Asset) error                 // metoda pro uložení jednoho aktiva
-	GetAssetByID(ctx context.Context, assetID string) (*domain.Asset, error) // metoda pro načtení jednoho aktiva podle ID
-	ListAssets(ctx context.Context) ([]domain.Asset, error)                  // metoda pro načtení všech aktiv
+	SaveAsset(ctx context.Context, asset domain.Asset) error                                // metoda pro uložení jednoho aktiva
+	GetAssetByID(ctx context.Context, assetID string) (*domain.Asset, error)                // metoda pro načtení jednoho aktiva podle ID
+	ListAssets(ctx context.Context) ([]domain.Asset, error)                                 // metoda pro načtení všech aktiv
+	UpdateAssetStatus(ctx context.Context, assetID string, status domain.AssetStatus) error // aktualizace lifecycle statusu aktiva
 }
 
 // TelemetryRepository drží operace nad TelemetryData Entitou

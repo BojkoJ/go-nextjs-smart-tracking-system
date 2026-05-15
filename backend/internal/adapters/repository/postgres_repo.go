@@ -75,6 +75,15 @@ func (pgRepo *PostgresRepo) SaveAlert(ctx context.Context, alert domain.Alert) e
 	return nil
 }
 
+// UpdateAssetStatus aktualizuje status (lifecycle) aktiva v PostgreSQL
+func (pgRepo *PostgresRepo) UpdateAssetStatus(ctx context.Context, assetID string, status domain.AssetStatus) error {
+	_, err := pgRepo.PostgresPool.Exec(ctx, "UPDATE assets SET status = $1 WHERE id = $2", status, assetID)
+	if err != nil {
+		return fmt.Errorf("updating asset status: %w", err)
+	}
+	return nil
+}
+
 // ------ List funkce: ---------------------------------------------------------------------------------------------------------------------
 
 // ListAssets získá z PostgreSQL databáze všechny Assety (aktiva) a vrátí je jako slice

@@ -34,6 +34,9 @@ func (m *mockAssetRepoH) GetAssetByID(ctx context.Context, id string) (*domain.A
 	return nil, nil
 }
 func (m *mockAssetRepoH) SaveAsset(_ context.Context, _ domain.Asset) error { return nil }
+func (m *mockAssetRepoH) UpdateAssetStatus(_ context.Context, _ string, _ domain.AssetStatus) error {
+	return nil
+}
 
 type mockTelemetryRepoH struct {
 	getLastFn     func(ctx context.Context, id string) (*domain.TelemetryData, error)
