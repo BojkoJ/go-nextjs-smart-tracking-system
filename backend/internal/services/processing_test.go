@@ -41,7 +41,7 @@ func (m *mockTelemetryRepo) SaveTelemetry(ctx context.Context, t domain.Telemetr
 func (m *mockTelemetryRepo) GetLastTelemetry(_ context.Context, _ string) (*domain.TelemetryData, error) {
 	return nil, nil
 }
-func (m *mockTelemetryRepo) ListTelemetryHistory(_ context.Context, _ string) ([]domain.TelemetryData, error) {
+func (m *mockTelemetryRepo) ListTelemetryHistory(_ context.Context, _ string, _, _ int) ([]domain.TelemetryData, error) {
 	return nil, nil
 }
 

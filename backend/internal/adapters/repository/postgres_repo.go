@@ -134,11 +134,11 @@ func (pgRepo *PostgresRepo) ListAlerts(ctx context.Context) ([]domain.Alert, err
 	return alerts, nil
 }
 
-// ListTelemetryHistory získá z PostgreSQL všechny záznamy Telemetrie pro daný Asset (aktivum) a vrátí je jako slice
-func (pgRepo *PostgresRepo) ListTelemetryHistory(ctx context.Context, assetID string) ([]domain.TelemetryData, error) {
+// ListTelemetryHistory získá z PostgreSQL záznamy Telemetrie pro daný Asset s podporou stránkování
+func (pgRepo *PostgresRepo) ListTelemetryHistory(ctx context.Context, assetID string, limit, offset int) ([]domain.TelemetryData, error) {
 	var telemetryEntries []domain.TelemetryData
 
-	rows, err := pgRepo.PostgresPool.Query(ctx, "SELECT asset_id, latitude, longitude, temperature, humidity, is_locked, timestamp_ns, trace_id from telemetry WHERE asset_id = $1 ORDER BY timestamp_ns DESC", assetID)
+	rows, err := pgRepo.PostgresPool.Query(ctx, "SELECT asset_id, latitude, longitude, temperature, humidity, is_locked, timestamp_ns, trace_id from telemetry WHERE asset_id = $1 ORDER BY timestamp_ns DESC LIMIT $2 OFFSET $3", assetID, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("querying all telemetries for one asset: %w", err)
 	}

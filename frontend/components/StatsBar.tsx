@@ -18,7 +18,7 @@ interface StatItemProps {
 function StatItem({ label, value, dim }: StatItemProps) {
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
+      <span className="text-xs font-medium uppercase tracking-widest text-zinc-500">
         {label}
       </span>
       <span
@@ -36,8 +36,8 @@ export function StatsBar({ asset, telemetry }: Props) {
   return (
     <div className="flex items-center gap-5 border-b border-zinc-800 bg-zinc-950 px-4 py-3 flex-wrap">
       <div className="flex items-center gap-2 text-zinc-400">
-        <Thermometer size={14} />
-        <span className="text-[10px] uppercase tracking-widest">Temp</span>
+        <Thermometer size={16} />
+        <span className="text-xs uppercase tracking-widest">Temp</span>
       </div>
 
       <StatItem label="Current" value={`${telemetry.Temperature.toFixed(1)}°C`} />
@@ -47,8 +47,8 @@ export function StatsBar({ asset, telemetry }: Props) {
       <Separator orientation="vertical" className="h-8 bg-zinc-800" />
 
       <div className="flex items-center gap-2 text-zinc-400">
-        <Droplets size={14} />
-        <span className="text-[10px] uppercase tracking-widest">Humidity</span>
+        <Droplets size={16} />
+        <span className="text-xs uppercase tracking-widest">Humidity</span>
       </div>
 
       <StatItem label="Current" value={`${telemetry.Humidity.toFixed(1)}%`} />
@@ -58,12 +58,12 @@ export function StatsBar({ asset, telemetry }: Props) {
 
       <div className="flex items-center gap-2">
         {locked ? (
-          <Lock size={14} className="text-emerald-400" />
+          <Lock size={16} className="text-emerald-400" />
         ) : (
-          <LockOpen size={14} className="text-red-400" />
+          <LockOpen size={16} className="text-red-400" />
         )}
         <span
-          className={`text-xs font-mono font-semibold ${locked ? "text-emerald-400" : "text-red-400"}`}
+          className={`text-sm font-mono font-semibold ${locked ? "text-emerald-400" : "text-red-400"}`}
         >
           {locked ? "LOCKED" : "UNLOCKED"}
         </span>

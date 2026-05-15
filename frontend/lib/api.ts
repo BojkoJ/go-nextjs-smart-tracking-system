@@ -25,9 +25,13 @@ export async function fetchLastTelemetry(assetId: string): Promise<Telemetry> {
 }
 
 export async function fetchTelemetryHistory(
-  assetId: string
+  assetId: string,
+  page: number = 0,
+  limit: number = 150
 ): Promise<Telemetry[]> {
-  const { data } = await client.get(`/assets/${assetId}/telemetry/history`);
+  const { data } = await client.get(`/assets/${assetId}/telemetry/history`, {
+    params: { limit, offset: page * limit },
+  });
   return z.array(TelemetrySchema).parse(data);
 }
 

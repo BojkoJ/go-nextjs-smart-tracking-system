@@ -35,9 +35,9 @@ type AssetRepository interface {
 
 // TelemetryRepository drží operace nad TelemetryData Entitou
 type TelemetryRepository interface {
-	SaveTelemetry(ctx context.Context, telemetry domain.TelemetryData) error                  // metoda pro uložení jednoho záznamu telemetrie
-	GetLastTelemetry(ctx context.Context, assetID string) (*domain.TelemetryData, error)      //metoda pro načtení posledního záznamu telemetrie pro dané aktivum
-	ListTelemetryHistory(ctx context.Context, assetID string) ([]domain.TelemetryData, error) // metoda pro načtení historie
+	SaveTelemetry(ctx context.Context, telemetry domain.TelemetryData) error                                     // metoda pro uložení jednoho záznamu telemetrie
+	GetLastTelemetry(ctx context.Context, assetID string) (*domain.TelemetryData, error)                         //metoda pro načtení posledního záznamu telemetrie pro dané aktivum
+	ListTelemetryHistory(ctx context.Context, assetID string, limit, offset int) ([]domain.TelemetryData, error) // metoda pro načtení historie
 }
 
 type AlertRepository interface {

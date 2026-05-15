@@ -40,7 +40,7 @@ func (m *mockAssetRepoH) UpdateAssetStatus(_ context.Context, _ string, _ domain
 
 type mockTelemetryRepoH struct {
 	getLastFn     func(ctx context.Context, id string) (*domain.TelemetryData, error)
-	listHistoryFn func(ctx context.Context, id string) ([]domain.TelemetryData, error)
+	listHistoryFn func(ctx context.Context, id string, limit, offset int) ([]domain.TelemetryData, error)
 }
 
 func (m *mockTelemetryRepoH) SaveTelemetry(_ context.Context, _ domain.TelemetryData) error {
@@ -52,9 +52,9 @@ func (m *mockTelemetryRepoH) GetLastTelemetry(ctx context.Context, id string) (*
 	}
 	return nil, nil
 }
-func (m *mockTelemetryRepoH) ListTelemetryHistory(ctx context.Context, id string) ([]domain.TelemetryData, error) {
+func (m *mockTelemetryRepoH) ListTelemetryHistory(ctx context.Context, id string, limit, offset int) ([]domain.TelemetryData, error) {
 	if m.listHistoryFn != nil {
-		return m.listHistoryFn(ctx, id)
+		return m.listHistoryFn(ctx, id, limit, offset)
 	}
 	return nil, nil
 }
@@ -216,7 +216,7 @@ func TestGetLastTelemetry_RepoError_Returns500(t *testing.T) {
 
 func TestListTelemetryHistory_OK_Returns200(t *testing.T) {
 	tr := &mockTelemetryRepoH{
-		listHistoryFn: func(_ context.Context, _ string) ([]domain.TelemetryData, error) {
+		listHistoryFn: func(_ context.Context, _ string, _, _ int) ([]domain.TelemetryData, error) {
 			return []domain.TelemetryData{{AssetID: "asset-1"}}, nil
 		},
 	}
@@ -228,7 +228,9 @@ func TestListTelemetryHistory_OK_Returns200(t *testing.T) {
 
 func TestListTelemetryHistory_RepoError_Returns500(t *testing.T) {
 	tr := &mockTelemetryRepoH{
-		listHistoryFn: func(_ context.Context, _ string) ([]domain.TelemetryData, error) { return nil, errors.New("db error") },
+		listHistoryFn: func(_ context.Context, _ string, _, _ int) ([]domain.TelemetryData, error) {
+			return nil, errors.New("db error")
+		},
 	}
 	rec := do(newTestHTTPHandler(&mockAssetRepoH{}, tr, &mockAlertRepoH{}), http.MethodGet, "/assets/asset-1/telemetry/history")
 	if rec.Code != http.StatusInternalServerError {

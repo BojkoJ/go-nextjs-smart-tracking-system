@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	"github.com/go-chi/chi/v5"
@@ -139,8 +140,21 @@ func (handler *HTTPHandler) getLastTelemetry(writer http.ResponseWriter, request
 func (handler *HTTPHandler) listTelemetryHistory(writer http.ResponseWriter, request *http.Request) {
 	id := chi.URLParam(request, "id")
 
+	limit := 150
+	offset := 0
+	if l := request.URL.Query().Get("limit"); l != "" {
+		if parsed, err := strconv.Atoi(l); err == nil && parsed > 0 && parsed <= 1000 {
+			limit = parsed
+		}
+	}
+	if o := request.URL.Query().Get("offset"); o != "" {
+		if parsed, err := strconv.Atoi(o); err == nil && parsed >= 0 {
+			offset = parsed
+		}
+	}
+
 	// 1) volání repa
-	telemetryEntries, err := handler.telemetryRepo.ListTelemetryHistory(request.Context(), id)
+	telemetryEntries, err := handler.telemetryRepo.ListTelemetryHistory(request.Context(), id, limit, offset)
 	if err != nil {
 		handler.logger.Error("failed to get telemetry history for asset", "error", err)
 		http.Error(writer, "internal server error", http.StatusInternalServerError) // 500
