@@ -9,3 +9,4 @@ backend/deploy/terraform/*.tfvars
 texts
 
 .idea
+backend/deploy/k8s/secret.yaml

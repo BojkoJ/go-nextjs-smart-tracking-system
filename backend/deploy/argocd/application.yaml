@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: smart-tracking-system
+  namespace: argocd
+spec:
+  project: default # ArgoCD projekt (default = žádná omezení)
+  source:
+    repoURL: https://github.com/BojkoJ/go-nextjs-smart-tracking-system.git
+    targetRevision: master
+    path: backend/deploy/k8s # kde v repozitáři jsou manifesty
+  destination:
+    server: https://kubernetes.default.svc # lokální cluster
+    namespace: tracking-system
+  syncPolicy:
+    automated:
+      prune: true # smaž z clusteru co zmizelo z Gitu
+      selfHeal: true # oprav manuální změny (drift)
+    syncOptions:
+      - CreateNamespace=false # namespace vytváří terraform, ne ArgoCD
+# port forward: kubectl port-forward svc/argocd-server -n argocd 8081:443
+# kubectl apply -f backend/deploy/argocd/application.yaml
+# kubectl get application -n argocd
+
+# pody selhávají: build + import do k3d:
+#  docker build --build-arg SERVICE=ingest -t ingest:latest .
+#  docker build --build-arg SERVICE=processor -t processor:latest .
+#  docker build --build-arg SERVICE=query -t query:latest .
+#  docker build --build-arg SERVICE=simulator -t simulator:latest .
+
+# k3d image import ingest:latest processor:latest query:latest simulator:latest -c tracking-system-k3s-cluster
+
+# kubectl apply -f backend/deploy/k8s/secret.yaml
+
+# schema + seed
+# kubectl cp backend/db/schema.sql infrastructure/postgresql-0:/tmp/schema.sql
+# kubectl cp backend/db/seed.sql infrastructure/postgresql-0:/tmp/seed.sql
+
+# kubectl exec -n infrastructure postgresql-0 -- env PGPASSWORD=... psql -U tracking_user -d tracking_db -f /tmp/schema.sql
+# kubectl exec -n infrastructure postgresql-0 -- env PGPASSWORD=... psql -U tracking_user -d tracking_db -f /tmp/seed.sql
+
+
+
+# login do postgresu
+# kubectl exec -n infrastructure -it postgresql-0 -- psql -U tracking_user -d tracking_db
