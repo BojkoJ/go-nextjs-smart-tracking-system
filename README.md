@@ -10,19 +10,22 @@ Distribuovaný cloudový systém pro sledování aktiv, postavený na Go mikrosl
 2. [Architektura](#architektura)
 3. [Předpoklady](#předpoklady)
 4. [Zprovoznění — kompletní bootstrap clusteru](#zprovoznění--kompletní-bootstrap-clusteru)
-5. [Mikroslužby](#mikroslužby)
+5. [Workflow při vývoji — GitOps s Tekton a ArgoCD](#workflow-při-vývoji--gitops-s-tekton-a-argocd)
+6. [Lokální vývoj bez Kubernetes](#lokální-vývoj-bez-kubernetes)
+7. [Testování](#testování)
+8. [Mikroslužby](#mikroslužby)
    - [Ingest](#ingest-service)
    - [Processor](#processor-service)
    - [Query](#query-service)
    - [Simulator](#simulator-service)
    - [Frontend](#frontend)
-6. [Kubernetes manifesty](#kubernetes-manifesty)
-7. [Infrastruktura (Terraform)](#infrastruktura-terraform)
-8. [k3d / k3s Cluster](#k3d--k3s-cluster)
-9. [ArgoCD — GitOps kontinuální nasazování](#argocd--gitops-kontinuální-nasazování)
-10. [Tekton — CI pipeline](#tekton--ci-pipeline)
-11. [Observabilita](#observabilita)
-12. [Přehled užitečných příkazů](#přehled-užitečných-příkazů)
+9. [Kubernetes manifesty](#kubernetes-manifesty)
+10. [Infrastruktura (Terraform)](#infrastruktura-terraform)
+11. [k3d / k3s Cluster](#k3d--k3s-cluster)
+12. [ArgoCD — GitOps kontinuální nasazování](#argocd--gitops-kontinuální-nasazování)
+13. [Tekton — CI pipeline](#tekton--ci-pipeline)
+14. [Observabilita](#observabilita)
+15. [Přehled užitečných příkazů](#přehled-užitečných-příkazů)
 
 ---
 
@@ -32,7 +35,7 @@ Systém modeluje životní cyklus průmyslových aktiv (lodních kontejnerů) z 
 
 - **Simulator** generuje realistická čtení senzorů (GPS poloha, teplota, vlhkost, stav zámku) pro 50 kontejnerů v jednosekundových intervalech a odesílá je přes gRPC do Ingest služby.
 - **Ingest** přijímá telemetrii přes gRPC a zveřejňuje ji do fronty NATS JetStream, aniž by blokoval Simulator.
-- **Processor** asynchronně konzumuje zprávy z fronty, ukládá je do PostgreSQL, vynucuje obchodní pravidla (limity teploty, vlhkosti, stav zámku), generuje alerty při jejich porušení a řídí životní cyklus kontejnerů (přechody stavů: `new` → `active` → `decommissioned` při příjezdu do Rotterdamu).
+- **Processor** asynchronně konzumuje zprávy z fronty, ukládá je do PostgreSQL, vynucuje obchodní pravidla (limity teploty, vlhkosti, stav zámku), generuje alerty při jejich porušení a řídí životní cyklus kontejnerů (přechody stavů: `new` -> `active` -> `decommissioned` při příjezdu do Rotterdamu).
 - **Query** poskytuje REST API podpořené přímo PostgreSQL, podle vzoru CQRS — čtecí provoz je zcela oddělen od zápisového pipeline.
 - **Frontend** (Next.js) vykresluje živou mapu pozice lodi, umožňuje uživateli vybrat libovolný ze 50 kontejnerů a zobrazuje telemetrický log v reálném čase spolu s aktuálními hodnotami senzorů.
 
@@ -41,7 +44,7 @@ Systém modeluje životní cyklus průmyslových aktiv (lodních kontejnerů) z 
 ## Architektura
 
 ```
-Simulator  -> gRPC ──► Ingest  -> NATS JetStream  -> Processor  -> PostgreSQL
+Simulator  -> gRPC -> Ingest  -> NATS JetStream  -> Processor  -> PostgreSQL
                                                                          │
 Frontend <── HTTP REST ──────────────────── Query <──────────────────────┘
 
@@ -58,7 +61,7 @@ CI/CD:
 
 - **Clean Architecture** — doménová vrstva nemá žádné externí závislosti; adaptéry (gRPC handler, HTTP handler, PostgreSQL repozitář, NATS klient) implementují portová rozhraní definovaná v jádru.
 - **Dependency Injection** — každá funkce `main()` je kompozičním kořenem; konkrétní implementace jsou zde sestaveny a předávány jako rozhraní do nižších vrstev.
-- **CQRS** — příkazy (příjem telemetrie) putují přes gRPC → NATS → Processor; dotazy (čtení dashboardu) jdou přímo do PostgreSQL přes Query.
+- **CQRS** — příkazy (příjem telemetrie) putují přes gRPC -> NATS -> Processor; dotazy (čtení dashboardu) jdou přímo do PostgreSQL přes Query.
 - **Událostmi řízená architektura** — NATS JetStream zajišťuje doručení alespoň jednou s trvanlivými konzumenty; pokud Processor selže, zprávy čekají ve frontě a jsou znovu doručeny po restartu.
 - **12-Factor App** — veškerá konfigurace je poskytována přes proměnné prostředí; do obrazů není vložena žádná konfigurace.
 
@@ -253,6 +256,248 @@ Všechny pody by měly být ve stavu `Running`. Otevřete dashboard na `http://l
 
 ---
 
+## Workflow při vývoji — GitOps s Tekton a ArgoCD
+
+Po dokončení počátečního bootstrapu (viz sekce výše) probíhá iterativní vývoj tímto způsobem. Cluster zůstává spuštěný, ArgoCD průběžně sleduje repozitář.
+
+### Změny v Go kódu nebo frontendu (vyžadují nový Docker obraz)
+
+1. Proveďte změny v kódu a commitněte je na větev `master`.
+2. Spusťte Tekton pipeline, který sestaví nové obrazy, pushne je do GHCR a automaticky aktualizuje image tagy v deployment manifestech:
+
+```bash
+kubectl create -f backend/deploy/tekton/pipeline-run.yaml
+```
+
+3. Sledujte průběh pipeline (trvá přibližně 35 minut kvůli sekvenčním Kaniko buildům):
+
+```bash
+kubectl get pipelineruns -n tracking-system -w
+```
+
+4. Po úspěšném pipeline runu Tekton pushne commit s novými image tagy do Gitu. ArgoCD tento commit detekuje (polling každé 3 minuty) a automaticky nasadí aktualizované pody.
+
+5. Pro okamžité vynucení synchronizace bez čekání na ArgoCD polling:
+
+```bash
+kubectl annotate application smart-tracking-system \
+  argocd.argoproj.io/refresh=hard -n argocd
+```
+
+### Změny pouze v Kubernetes manifestech (bez změny kódu)
+
+Pokud měníte pouze manifesty v `backend/deploy/k8s/` (ConfigMap, resource limity, počet replik apod.), není nutné spouštět Tekton pipeline. Stačí commitnout a pushnout — ArgoCD změnu detekuje a aplikuje ji automaticky. Pro okamžitou aplikaci bez čekání:
+
+```bash
+# Přímá aplikace manifestů (obchází ArgoCD, vhodné pro rychlé ladění)
+kubectl apply -f backend/deploy/k8s/
+
+# Nebo vynuťte ArgoCD sync
+kubectl annotate application smart-tracking-system \
+  argocd.argoproj.io/refresh=hard -n argocd
+```
+
+### Vyčištění telemetrických dat (reset simulace)
+
+Pokud chcete restartovat simulaci od začátku (prázdná databáze, nová data):
+
+```bash
+# Smazání všech telemetrických záznamů a alertů
+kubectl exec -it -n infrastructure postgresql-0 -- psql -U tracking_user -d tracking_db -W \
+  -c "TRUNCATE TABLE telemetry; TRUNCATE TABLE alerts;"
+
+# Restart všech aplikačních podů
+kubectl rollout restart deployment/ingest deployment/processor \
+  deployment/query deployment/simulator deployment/frontend \
+  -n tracking-system
+```
+
+---
+
+## Lokální vývoj bez Kubernetes
+
+Pro rychlý iterativní vývoj bez nutnosti spouštět k3d cluster. Infrastruktura (NATS, PostgreSQL) běží v Dockeru, služby spouštíme přímo přes `go run` a `npm run dev`.
+
+### 1. Spuštění infrastruktury v Dockeru
+
+```bash
+# NATS JetStream
+docker run -d --name nats-local -p 4222:4222 nats:latest -js
+
+# PostgreSQL
+docker run -d --name postgres-local \
+  -e POSTGRES_USER=tracking_user \
+  -e POSTGRES_PASSWORD=devpassword \
+  -e POSTGRES_DB=tracking_db \
+  -p 5432:5432 postgres:16
+```
+
+### 2. Inicializace databázového schématu
+
+```bash
+docker exec -i postgres-local psql -U tracking_user -d tracking_db <<'EOF'
+CREATE TABLE IF NOT EXISTS assets (
+    id              TEXT PRIMARY KEY,
+    name            TEXT NOT NULL,
+    max_temperature DOUBLE PRECISION NOT NULL,
+    min_temperature DOUBLE PRECISION NOT NULL,
+    max_humidity    DOUBLE PRECISION NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'new',
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS telemetry (
+    id           BIGSERIAL PRIMARY KEY,
+    asset_id     TEXT NOT NULL REFERENCES assets(id),
+    latitude     DOUBLE PRECISION NOT NULL,
+    longitude    DOUBLE PRECISION NOT NULL,
+    temperature  DOUBLE PRECISION NOT NULL,
+    humidity     DOUBLE PRECISION NOT NULL,
+    is_locked    BOOLEAN NOT NULL,
+    timestamp_ns BIGINT NOT NULL,
+    trace_id     TEXT NOT NULL,
+    recorded_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE TABLE IF NOT EXISTS alerts (
+    id         TEXT PRIMARY KEY,
+    asset_id   TEXT NOT NULL REFERENCES assets(id),
+    type       TEXT NOT NULL,
+    message    TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_telemetry_asset_id ON telemetry(asset_id, timestamp_ns DESC);
+CREATE INDEX IF NOT EXISTS idx_alerts_asset_id ON alerts(asset_id);
+INSERT INTO assets (id, name, max_temperature, min_temperature, max_humidity, status)
+SELECT 'asset-' || i, 'IQM Container #' || i, 28.0, 12.0, 45.0, 'active'
+FROM generate_series(1, 50) AS i
+ON CONFLICT (id) DO NOTHING;
+EOF
+```
+
+### 3. Nastavení proměnných prostředí
+
+Každá služba čte konfiguraci z proměnných prostředí. Doporučené hodnoty pro lokální vývoj:
+
+| Proměnná | Hodnota pro lokální vývoj |
+|---|---|
+| `NATS_URL` | `nats://localhost:4222` |
+| `GRPC_PORT` | `50051` |
+| `HTTP_PORT` | `8080` |
+| `INGEST_ADDR` | `localhost:50051` |
+| `POSTGRES_URL` | `postgresql://tracking_user:devpassword@localhost:5432/tracking_db` |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | *(nenastavovat — traces se tisknou na stdout)* |
+
+Proměnné lze exportovat v shellu nebo umístit do souboru `.env` a načíst pomocí `export $(cat .env | xargs)`.
+
+### 4. Spuštění mikroslužeb
+
+Každou službu spusťte v samostatném terminálu z adresáře `backend/`:
+
+```bash
+# Terminál 1 — Ingest
+export NATS_URL=nats://localhost:4222 GRPC_PORT=50051
+go run ./cmd/ingest
+
+# Terminál 2 — Processor
+export NATS_URL=nats://localhost:4222 POSTGRES_URL=postgresql://tracking_user:devpassword@localhost:5432/tracking_db
+go run ./cmd/processor
+
+# Terminál 3 — Query
+export POSTGRES_URL=postgresql://tracking_user:devpassword@localhost:5432/tracking_db HTTP_PORT=8080
+go run ./cmd/query
+
+# Terminál 4 — Simulator
+export INGEST_ADDR=localhost:50051
+go run ./cmd/simulator
+```
+
+### 5. Spuštění frontendu
+
+```bash
+cd frontend
+# .env.local už obsahuje NEXT_PUBLIC_API_URL=http://localhost:8080
+npm run dev
+```
+
+Frontend je dostupný na `http://localhost:3000`. Query API běží na `http://localhost:8080`.
+
+### 6. Spuštění testů
+
+```bash
+cd backend
+go test ./...
+```
+
+### Zastavení a čistění
+
+```bash
+docker stop nats-local postgres-local
+docker rm nats-local postgres-local
+```
+
+---
+
+## Testování
+
+Projekt používá výhradně automatizované unit testy bez externích závislostí. Integrační ani end-to-end testy nejsou součástí sady — infrastruktura (NATS, PostgreSQL) běží v Kubernetes a její chování je pokryto manuálním ověřením po každém nasazení.
+
+### Framework a nástroje
+
+| Nástroj | Účel |
+|---|---|
+| Go `testing` (stdlib) | Testovací framework — žádná externí závislost |
+| `net/http/httptest` | In-process HTTP server pro testování REST handlerů bez síťového spojení |
+| Mock structs (ručně psané) | Implementace port interfaců (`AssetRepository`, `TelemetryRepository`, `AlertRepository`, `EventProducer`) s nastavitelnými funkcemi pro simulaci chování repozitáře |
+
+### Testové soubory a pokrytí
+
+| Soubor | Počet testů | Pokrytí balíčku |
+|---|---|---|
+| `internal/adapters/handler/http_handler_test.go` | 15 | 87,8 % |
+| `internal/adapters/handler/grpc_handler_test.go` | 5 | (součást handler balíčku) |
+| `internal/services/processing_test.go` | 14 | 89,2 % |
+| `internal/services/ingestion_test.go` | 12 | (součást services balíčku) |
+| `cmd/simulator/main_test.go` | 18 | 39,8 % |
+| `internal/common/config_test.go` | 8 | 40,0 % |
+| **Celkem** | **72** | |
+
+Nižší pokrytí `simulator` a `common` odpovídá povaze kódu: hlavní simulační smyčka (`runContainer` goroutina) a inicializace OpenTelemetry jsou těžko testovatelné bez skutečné infrastruktury a nejsou součástí byznys logiky.
+
+### Co se testuje a proč
+
+**HTTP handler** (`http_handler_test.go`, 15 testů) — každý REST endpoint má minimálně tři testovací případy: happy path (správný HTTP status a JSON tělo), not found (404 při prázdném repozitáři) a chyba repozitáře (500). Ověřuje se také správný `Content-Type` header a deserializovatelnost JSON odpovědi.
+
+**gRPC handler** (`grpc_handler_test.go`, 5 testů) — ověřuje mapování všech 8 polí z `TelemetryRequest` na `domain.TelemetryData`, chování při chybě služby (`success=false` v response bez gRPC error kódu, protože chyby jsou součástí aplikačního protokolu) a okrajový případ nulového `timestamp_ns`.
+
+**Processing service** (`processing_test.go`, 14 testů) — pokrývá všechna 4 obchodní pravidla pro generování alertů (teplota nad max, teplota pod min, vlhkost nad max, odemčený zámek), hraniční podmínky (přesně na limitu = žádný alert), souběžná porušení více pravidel najednou, propagaci chyb repozitáře a správnost obsahu vygenerovaného alertu (ID, AssetID).
+
+**Ingestion service** (`ingestion_test.go`, 12 testů) — validace vstupních dat (prázdné `asset_id`, `NaN` teplota, GPS souřadnice mimo fyzikálně platný rozsah), hraniční hodnoty (souřadnice přesně na hranici jsou platné), ověření správného NATS subjektu, platnosti JSON payloadu a propagace chyby publisheru.
+
+**Simulator** (`main_test.go`, 18 testů) — Haversinova vzdálenostní funkce (symetrie, nulový bod, čtvrtina rovníku, trasa Busan–Rotterdam), `computeShipPosition` (progrese v čase, fyzikální meze souřadnic), `computeTemperature` a `computeHumidity` (výstup v fyzikálně smysluplném rozsahu, vliv offsetu per kontejner).
+
+### Strategie testování
+
+Testy jsou navrženy jako **hradlo kvality** v CI pipeline: Tekton spouští `go test ./...` jako krok 2 (po `git-clone`, před jakýmkoliv Docker buildem). Selžou-li testy, pipeline se zastaví a žádný nový obraz není sestaven ani pushnut. To zaručuje, že v GHCR existuje pouze kód, který prošel testy.
+
+Vývojářský workflow lokálně:
+
+```bash
+cd backend
+
+# Spustit všechny testy
+go test ./...
+
+# Spustit testy s pokrytím kódu
+go test -cover ./...
+
+# Spustit konkrétní balíček s verbose výstupem
+go test -v ./internal/services/...
+
+# Spustit jeden konkrétní test
+go test -v -run TestProcessTelemetry_TemperatureAboveMax_CreatesMaxAlert ./internal/services/
+```
+
+---
+
 ## Mikroslužby
 
 Všechny Go služby sdílí jediný vícefázový `Dockerfile` v `backend/`. Build argument `SERVICE` vybírá, který vstupní bod `cmd/<sluzba>` se zkompiluje.
@@ -291,7 +536,7 @@ Deployment vystavuje dva porty: `50051` (gRPC) a `9090` (Prometheus metriky). Se
 | Teplota klesne pod `MinTemperature` (12°C) | `temperature < asset.MinTemperature` | `temperature_exceeded_min_limit` |
 | Vlhkost překročí `MaxHumidity` (45% RH) | `humidity > asset.MaxHumidity` | `humidity_exceeded_max_limit` |
 | Kontejner odemčen | `!isLocked` | `container_unlocked` |
-| Příjezd do Rotterdamu | Haversinova vzdálenost ≤ 50 km | Status → `decommissioned` |
+| Příjezd do Rotterdamu | Haversinova vzdálenost ≤ 50 km | Status -> `decommissioned` |
 
 **Klíčové soubory:**
 
@@ -423,7 +668,7 @@ Veškerá infrastruktura je deklarována v `backend/deploy/terraform/`. Spuště
 | Soubor | Obsah |
 |---|---|
 | `main.tf` | Deklarace providerů (`moio/k3d`, `hashicorp/kubernetes`, `hashicorp/helm`) a jejich konfigurace (přihlašovací údaje clusteru zapojeny přímo ze zdroje k3d) |
-| `cluster.tf` | Zdroj `k3d_cluster` — název clusteru, počty serverů/agentů, verze k3s obrazu, mapování hostitelského portu (`8080` → `80`) |
+| `cluster.tf` | Zdroj `k3d_cluster` — název clusteru, počty serverů/agentů, verze k3s obrazu, mapování hostitelského portu (`8080` -> `80`) |
 | `namespaces.tf` | Čtyři zdroje `kubernetes_namespace`: `infrastructure`, `tracking-system`, `argocd`, `monitoring` |
 | `infrastructure.tf` | Šest zdrojů `helm_release`: NATS (JetStream povolen), PostgreSQL (Bitnami, persistence vypnuta pro lokální vývoj), kube-prometheus-stack (Prometheus + Grafana + AlertManager, NodePort), Grafana Tempo (OTLP gRPC přijímač na `0.0.0.0:4317`), Loki-stack (Promtail jako DaemonSet, Grafana a Prometheus vypnuty) |
 | `argocd.tf` | ArgoCD `helm_release` s `wait: true` a timeoutem 480 sekund |
@@ -456,7 +701,7 @@ Hostitelský počítač (Ubuntu)
     ├── k3d-tracking-system-k3s-cluster-server-0   (control plane)
     ├── k3d-tracking-system-k3s-cluster-agent-0    (worker uzel)
     ├── k3d-tracking-system-k3s-cluster-agent-1    (worker uzel)
-    └── k3d-tracking-system-k3s-cluster-serverlb   (load balancer, port 8080 → 80)
+    └── k3d-tracking-system-k3s-cluster-serverlb   (load balancer, port 8080 -> 80)
 ```
 
 **Mapování portů:** Hostitelský port `8080` je přesměrován k3d load-balancer kontejnerem do Traefiku uvnitř clusteru na port `80`. Veškerý HTTP provoz do aplikace (dashboard a API) prochází přes `http://localhost:8080`.
@@ -511,7 +756,7 @@ Tekton běží uvnitř clusteru (namespace `tracking-system`) a na vyžádání 
 
 1. **git-clone** — Naklonuje repozitář do sdíleného PVC (`tekton-workspace-pvc`). Výstupem je krátký Git SHA jako výsledná hodnota použitá pro tagování obrazů.
 2. **run-tests** — Spustí `go test ./...` uvnitř adresáře `backend/`.
-3. **build-push-ingest** → **build-push-processor** → **build-push-query** → **build-push-simulator** → **build-push-frontend** — Sestavuje Docker obrazy sekvenčně pomocí Kaniko. Každý obraz je pushnut do GHCR se dvěma tagy: krátký SHA (neměnný, používaný v manifestech) a `latest` (měnitelný ukazatel).
+3. **build-push-ingest** -> **build-push-processor** -> **build-push-query** -> **build-push-simulator** -> **build-push-frontend** — Sestavuje Docker obrazy sekvenčně pomocí Kaniko. Každý obraz je pushnut do GHCR se dvěma tagy: krátký SHA (neměnný, používaný v manifestech) a `latest` (měnitelný ukazatel).
 4. **update-manifest** — Aktualizuje pole `image:` v každém souboru `*-deployment.yaml` pomocí `sed`, commitne změnu a pushne ji do repozitáře.
 
 Build tasky běží sekvenčně, aby se předešlo vyčerpání DNS pod zátěží z více souběžných Kaniko podů.
@@ -577,12 +822,12 @@ kubectl port-forward svc/kube-prometheus-stack-grafana 3000:80 -n monitoring
 Všechny čtyři Go služby inicializují `TracerProvider` při startu (`backend/internal/common/otel.go`). Pokud je nastavena proměnná `OTEL_EXPORTER_OTLP_ENDPOINT` (přes ConfigMap v Kubernetes), traces jsou exportovány přes OTLP gRPC do Tempa na `tempo.monitoring.svc.cluster.local:4317`. Bez proměnné prostředí jsou traces tištěny na stdout (vhodné pro lokální vývoj).
 
 Trace kontext se propaguje přes hranice služeb pomocí standardu W3C TraceContext:
-- Simulator → Ingest: přes `otelgrpc` stats handler (gRPC metadata)
-- Ingest → NATS → Processor: přes vlastní `TextMapCarrier` v hlavičkách NATS zpráv
+- Simulator -> Ingest: přes `otelgrpc` stats handler (gRPC metadata)
+- Ingest -> NATS -> Processor: přes vlastní `TextMapCarrier` v hlavičkách NATS zpráv
 
 **Zobrazení traces v Grafaně:**
 
-Otevřete Grafanu → Explore → vyberte datasource **Tempo** → použijte záložku Search pro dotaz podle názvu služby.
+Otevřete Grafanu -> Explore -> vyberte datasource **Tempo** -> použijte záložku Search pro dotaz podle názvu služby.
 
 ### Logy (Promtail + Loki)
 
@@ -592,7 +837,7 @@ Všechny Go služby používají `log/slog` s JSON výstupem, strukturovanými p
 
 **Dotazování logů v Grafaně:**
 
-Otevřete Grafanu → Explore → vyberte datasource **Loki** → filtrujte podle `{namespace="tracking-system"}`.
+Otevřete Grafanu -> Explore -> vyberte datasource **Loki** -> filtrujte podle `{namespace="tracking-system"}`.
 
 ---
 
