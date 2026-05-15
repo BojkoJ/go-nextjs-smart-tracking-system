@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/bojkoj/frontend:latest
+          image: ghcr.io/bojkoj/frontend:42427fb
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
