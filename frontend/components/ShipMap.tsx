@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import type { Telemetry } from "@/lib/schemas";
+import { useEffect, useRef, useState } from "react";
 
 interface ShipPosition {
   assetId: string;
@@ -28,14 +27,14 @@ export function ShipMap({ positions, onShipClick, selectedId }: Props) {
   const mapInstanceRef = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const markersRef = useRef<Map<string, any>>(new Map());
+  const [leafletReady, setLeafletReady] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined" || mapInstanceRef.current) return;
 
     const linkEl = document.createElement("link");
     linkEl.rel = "stylesheet";
-    linkEl.href =
-      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+    linkEl.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
     document.head.appendChild(linkEl);
 
     const script = document.createElement("script");
@@ -59,13 +58,14 @@ export function ShipMap({ positions, onShipClick, selectedId }: Props) {
       ).addTo(map);
 
       mapInstanceRef.current = map;
+      setLeafletReady(true);
     };
     document.head.appendChild(script);
   }, []);
 
   useEffect(() => {
     const L = window.L;
-    if (!L || !mapInstanceRef.current || positions.length === 0) return;
+    if (!leafletReady || !L || !mapInstanceRef.current || positions.length === 0) return;
 
     const map = mapInstanceRef.current;
 
@@ -84,8 +84,6 @@ export function ShipMap({ positions, onShipClick, selectedId }: Props) {
       });
     };
 
-    // Wszystkie pody mají stejnou pozici (jsou na jedné lodi) — zobraz jeden marker
-    // Ale uživatel klikne a vybere jeden z 50 kontejnerů
     const uniquePositions = new Map<string, ShipPosition>();
     positions.forEach((p) => {
       const key = `${p.lat.toFixed(2)}_${p.lon.toFixed(2)}`;
@@ -95,22 +93,29 @@ export function ShipMap({ positions, onShipClick, selectedId }: Props) {
     });
 
     uniquePositions.forEach((pos, key) => {
+      const selectedPos = selectedId
+        ? positions.find((p) => p.assetId === selectedId)
+        : null;
       const isSelected =
-        selectedId !== null &&
-        positions.find((p) => p.assetId === selectedId)?.lat === pos.lat &&
-        positions.find((p) => p.assetId === selectedId)?.lon === pos.lon;
+        selectedPos !== null &&
+        selectedPos !== undefined &&
+        selectedPos.lat === pos.lat &&
+        selectedPos.lon === pos.lon;
 
       const marker = L.marker([pos.lat, pos.lon], {
-        icon: shipIcon(isSelected ?? false),
+        icon: shipIcon(isSelected),
       })
         .addTo(map)
         .on("click", () => onShipClick(pos.assetId));
 
       markersRef.current.set(key, marker);
     });
-  }, [positions, selectedId, onShipClick]);
 
-  return (
-    <div ref={mapRef} className="flex-1 min-h-0" />
-  );
+    if (uniquePositions.size > 0) {
+      const first = uniquePositions.values().next().value;
+      if (first) map.setView([first.lat, first.lon], 5);
+    }
+  }, [positions, selectedId, onShipClick, leafletReady]);
+
+  return <div ref={mapRef} className="flex-1 min-h-0" />;
 }
