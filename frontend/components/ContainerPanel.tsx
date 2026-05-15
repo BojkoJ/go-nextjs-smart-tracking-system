@@ -45,7 +45,7 @@ export function ContainerPanel({ assets, selectedId, onSelectId, onClose }: Prop
         </div>
 
         <div className="flex items-center gap-3 flex-1 mx-4">
-          <Select value={selectedId} onValueChange={onSelectId}>
+          <Select value={selectedId} onValueChange={(v) => { if (v) onSelectId(v); }}>
             <SelectTrigger className="h-7 text-xs font-mono bg-zinc-800 border-zinc-700 text-zinc-200 focus:ring-0 focus:ring-offset-0">
               <SelectValue />
             </SelectTrigger>
