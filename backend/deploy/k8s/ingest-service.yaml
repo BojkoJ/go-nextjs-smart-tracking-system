@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: ingest-service
   namespace: tracking-system
+  labels:
+    app: ingest
 spec:
   selector:
     app: ingest

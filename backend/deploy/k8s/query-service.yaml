@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: query-service
   namespace: tracking-system
+  labels:
+    app: query
 spec:
   selector:
     app: query
