@@ -76,7 +76,7 @@ spec:
       taskRef:
         name: build-push
       runAfter:
-        - run-tests
+        - build-push-ingest
       params:
         - name: service
           value: processor
@@ -96,7 +96,7 @@ spec:
       taskRef:
         name: build-push
       runAfter:
-        - run-tests
+        - build-push-processor
       params:
         - name: service
           value: query
@@ -116,7 +116,7 @@ spec:
       taskRef:
         name: build-push
       runAfter:
-        - run-tests
+        - build-push-query
       params:
         - name: service
           value: simulator
@@ -136,7 +136,7 @@ spec:
       taskRef:
         name: build-push
       runAfter:
-        - run-tests
+        - build-push-simulator
       params:
         - name: service
           value: frontend
