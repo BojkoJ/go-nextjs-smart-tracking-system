@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: ingest
-          image: ghcr.io/bojkoj/ingest:latest
+          image: ghcr.io/bojkoj/ingest:9786c35
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 50051
