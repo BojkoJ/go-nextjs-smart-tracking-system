@@ -8,6 +8,7 @@ import (
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/domain"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	pb "github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/proto"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // ---------------------------------------------------------------------------------------------------------
@@ -52,6 +53,13 @@ func (handler *GRPCHandler) SendTelemetry(ctx context.Context, request *pb.Telem
 	// Adapter boundary pravidlo - za touto hranicí nesmí existovat žádná závislost na pb balíčku.
 	// Service a domain o Protobuf nevědí.
 	// Kdybychom předali "request" dál, celý vnitřní systém by závisel na vygenerovaném kódu.
+	// Preferuj OTel TraceID z propagovaného span contextu (přesný, 32-hex W3C trace ID).
+	// Fallback na request.TraceId pokud span není aktivní (testy, non-instrumented caller).
+	traceID := request.TraceId
+	if sc := trace.SpanFromContext(ctx).SpanContext(); sc.IsValid() {
+		traceID = sc.TraceID().String()
+	}
+
 	telemetry := domain.TelemetryData{
 		AssetID:     request.AssetId,
 		Latitude:    request.Latitude,
@@ -60,7 +68,7 @@ func (handler *GRPCHandler) SendTelemetry(ctx context.Context, request *pb.Telem
 		Humidity:    request.Humidity,
 		IsLocked:    request.IsLocked,
 		Timestamp:   time.Unix(0, request.TimestampNs),
-		TraceID:     request.TraceId,
+		TraceID:     traceID,
 	}
 
 	// 2) zavolání service

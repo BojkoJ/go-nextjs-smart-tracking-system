@@ -12,6 +12,7 @@ import (
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/common"
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/services"
 	pb "github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/proto"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 )
 
@@ -41,6 +42,13 @@ func main() {
 	// vytvoříme strukturovaný JSON logger pro tuto mikroslužbu
 	logger := common.NewLogger("ingest")
 	logger.Info("Ingest Microservice starting")
+
+	otelShutdown, err := common.InitTracerProvider(context.Background(), "ingest")
+	if err != nil {
+		logger.Error("failed to init tracer provider", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	// načteme konfiguraci z environment proměnných (12-Factor App princip č.3)
 	// Load() selže pokud chybí povinné proměnné NATS_URL nebo POSTGRES_URL
@@ -74,8 +82,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	// vytvoříme gRPC server
-	grpcServer := grpc.NewServer()
+	// otelgrpc.NewServerHandler() extrahuje W3C trace context z příchozích gRPC metadat
+	// a vytvoří child span pro každý request — automaticky bez změny handler kódu
+	grpcServer := grpc.NewServer(grpc.StatsHandler(otelgrpc.NewServerHandler()))
 
 	// zaregistrujeme náš handler do gRPC serveru - říkáme: "příchozí TelemetryService requesty zpracuj přes grpcHandler"
 	pb.RegisterTelemetryServiceServer(grpcServer, grpcHandler)

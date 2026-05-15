@@ -7,6 +7,8 @@ import (
 
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/ports"
 	"github.com/nats-io/nats.go"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // ---------------------------------------------------------------------------------------------------------
@@ -17,6 +19,22 @@ import (
 // Processor Service jen Subscribe.
 // Přesto je logické mít jednu implementaci - jedno spojení, dva způsoby použití.
 // ---------------------------------------------------------------------------------------------------------
+
+// natsHeaderCarrier implementuje propagation.TextMapCarrier pro NATS message headers.
+// Umožňuje otel propagátoru injektovat/extrahovat W3C TraceContext z NATS zprávy.
+type natsHeaderCarrier struct{ h nats.Header }
+
+func (c natsHeaderCarrier) Get(key string) string { return c.h.Get(key) }
+func (c natsHeaderCarrier) Set(key, val string)   { c.h.Set(key, val) }
+func (c natsHeaderCarrier) Keys() []string {
+	keys := make([]string, 0, len(c.h))
+	for k := range c.h {
+		keys = append(keys, k)
+	}
+	return keys
+}
+
+var _ propagation.TextMapCarrier = natsHeaderCarrier{}
 
 type NATSClient struct {
 	Connection       *nats.Conn
@@ -44,7 +62,6 @@ func NewNATSClient(url string, logger *slog.Logger) (*NATSClient, error) {
 	// "telemetry.>" znamená "všechny subjekty začínající "telemetry."
 	_, err = jetStream.StreamInfo("TELEMETRY")
 	if err != nil {
-		// Neexistuje
 		_, err := jetStream.AddStream(&nats.StreamConfig{
 			Name:     "TELEMETRY",
 			Subjects: []string{"telemetry.>"},
@@ -58,12 +75,16 @@ func NewNATSClient(url string, logger *slog.Logger) (*NATSClient, error) {
 	return &NATSClient{Connection: natsConn, JetStreamContext: jetStream, logger: logger}, nil
 }
 
-func (client *NATSClient) PublishMessage(_ context.Context, subject string, data []byte) error {
-	// NATSClient nemá vlastní service jméno - sdílí ho totiž services Ingest i Processor, takže zde nevytváříme nový logge,
-	// protože ten by potřeboval jméno služby (common.NewLogger(..)), ale bereme ho přes parametr
+func (client *NATSClient) PublishMessage(ctx context.Context, subject string, data []byte) error {
+	msg := &nats.Msg{
+		Subject: subject,
+		Data:    data,
+		Header:  nats.Header{},
+	}
+	// Injektuj W3C trace context do NATS message headers (traceparent, tracestate)
+	otel.GetTextMapPropagator().Inject(ctx, natsHeaderCarrier{msg.Header})
 
-	// ctx zatím nepoužíváme
-	_, err := client.JetStreamContext.Publish(subject, data)
+	_, err := client.JetStreamContext.PublishMsg(msg)
 	if err != nil {
 		return fmt.Errorf("publishing message to JetStream: %w", err)
 	}
@@ -72,7 +93,10 @@ func (client *NATSClient) PublishMessage(_ context.Context, subject string, data
 
 func (client *NATSClient) Subscribe(subject string, handler func(context.Context, []byte) error) error {
 	_, err := client.JetStreamContext.Subscribe(subject, func(msg *nats.Msg) {
-		if err := handler(context.Background(), msg.Data); err != nil {
+		// Extrahuj trace context z NATS headers — obnoví trace který Ingest injektoval při publikaci
+		ctx := otel.GetTextMapPropagator().Extract(context.Background(), natsHeaderCarrier{msg.Header})
+
+		if err := handler(ctx, msg.Data); err != nil {
 			client.logger.Error("failed to process message", "subject", subject, "error", err)
 			if nakErr := msg.Nak(); nakErr != nil {
 				client.logger.Error("failed to nak message", "error", nakErr)

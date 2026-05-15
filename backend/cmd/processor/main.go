@@ -43,6 +43,13 @@ func main() {
 	logger := common.NewLogger("processor")
 	logger.Info("Processor Microservice starting")
 
+	otelShutdown, err := common.InitTracerProvider(context.Background(), "processor")
+	if err != nil {
+		logger.Error("failed to init tracer provider", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
+
 	// načteme konfiguraci z environment proměnných (12-Factor App princip č.3)
 	// Load() selže pokud chybí povinné proměnné NATS_URL nebo POSTGRES_URL
 	config, err := common.Load()

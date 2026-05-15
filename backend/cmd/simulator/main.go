@@ -14,7 +14,9 @@ import (
 
 	"github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/common"
 	pb "github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/proto"
-	"github.com/google/uuid"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -253,6 +255,11 @@ func runContainer(id int, startTime time.Time, client pb.TelemetryServiceClient,
 			// spočítáme novou vlhkost pro tuto vteřinu
 			humidity := computeHumidity(startTime, state.HumidityOffset)
 
+			// Nový root span pro každý telemetrický event — trace propojí cestu přes Ingest → NATS → Processor → DB
+			spanCtx, span := otel.Tracer("simulator").Start(ctx, "send-telemetry",
+				trace.WithSpanKind(trace.SpanKindProducer),
+			)
+
 			request := pb.TelemetryRequest{
 				AssetId:     state.ID,
 				Latitude:    latitude,
@@ -261,12 +268,13 @@ func runContainer(id int, startTime time.Time, client pb.TelemetryServiceClient,
 				Humidity:    humidity,
 				IsLocked:    state.IsLocked,
 				TimestampNs: time.Now().UnixNano(),
-				TraceId:     uuid.New().String(),
+				// TraceID z aktivního spanu — otelgrpc propaguje tento kontext do gRPC metadat
+				TraceId: span.SpanContext().TraceID().String(),
 			}
 
 			// každý grpc call dostane vlastní deadline (5 sekund) - bez deadline by při pomalém ingestu goroutina blokovala indefinitely
 			// callCancel voláme přímo po návratu SendTelemetry, ne defer - defer v smyčce se akumuluje a nevolá se do konce funkce
-			callCtx, callCancel := context.WithTimeout(ctx, 5*time.Second)
+			callCtx, callCancel := context.WithTimeout(spanCtx, 5*time.Second)
 			response, err := client.SendTelemetry(callCtx, &request)
 			callCancel()
 
@@ -275,6 +283,7 @@ func runContainer(id int, startTime time.Time, client pb.TelemetryServiceClient,
 			} else if !response.Success {
 				logger.Warn("response when sending telemetry was not success", "message", response.Message)
 			}
+			span.End()
 		}
 	}
 }
@@ -283,6 +292,13 @@ func main() {
 	// vytvoříme si pro tuto mikroslužbu logger a logneme rovnou, že mirkoslužba začíná
 	logger := common.NewLogger("simulator")
 	logger.Info("Simulator Microservice starting", "containers", 50)
+
+	otelShutdown, err := common.InitTracerProvider(context.Background(), "simulator")
+	if err != nil {
+		logger.Error("failed to init tracer provider", "error", err)
+		os.Exit(1)
+	}
+	defer func() { _ = otelShutdown(context.Background()) }()
 
 	// načteme konfiguraci z environment proměnných (12-Factor App princip č.3)
 	// Load() selže pokud chybí povinné proměnné NATS_URL nebo POSTGRES_URL
@@ -298,7 +314,9 @@ func main() {
 	connection, err := grpc.NewClient(
 		config.IngestAddr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		// druhý parametr říká: "nechci TLS, protože komunikace probíhá lokálně a nepotřebujeme šifrování, což zjednodušuje nastavení a vývoj"
+		// otelgrpc.NewClientHandler() injektuje W3C trace context do gRPC metadat každého volání
+		// Ingest server handler extrahuje context a vytvoří child span — propojení trace přes hranici služeb
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 	if err != nil {
 		logger.Error("failed to create gRPC client for ingest microservice", "error", err)
