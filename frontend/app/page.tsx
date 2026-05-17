@@ -16,41 +16,41 @@ function useAllPositions(assets: Asset[]) {
   const [positions, setPositions] = useState<
     { assetId: string; lat: number; lon: number }[]
   >([]);
-  const fetchedRef = useRef(false);
+  const assetsRef = useRef(assets);
+  assetsRef.current = assets;
 
   useEffect(() => {
-    if (assets.length === 0 || fetchedRef.current) return;
-    fetchedRef.current = true;
+    if (assets.length === 0) return;
 
-    Promise.allSettled(
-      assets.map(async (asset) => {
-        try {
-          const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/assets/${asset.ID}/telemetry`
-          );
-          if (!res.ok) return null;
-          const data = await res.json();
-          return { assetId: asset.ID, lat: data.Latitude, lon: data.Longitude };
-        } catch {
-          return null;
-        }
-      })
-    ).then((results) => {
+    const doFetch = async () => {
+      const results = await Promise.allSettled(
+        assetsRef.current.map(async (asset) => {
+          try {
+            const res = await fetch(
+              `${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080"}/assets/${asset.ID}/telemetry`
+            );
+            if (!res.ok) return null;
+            const data = await res.json();
+            return { assetId: asset.ID, lat: data.Latitude, lon: data.Longitude };
+          } catch {
+            return null;
+          }
+        })
+      );
       const valid = results
         .filter((r) => r.status === "fulfilled" && r.value !== null)
         .map(
           (r) =>
-            (
-              r as PromiseFulfilledResult<{
-                assetId: string;
-                lat: number;
-                lon: number;
-              }>
-            ).value
+            (r as PromiseFulfilledResult<{ assetId: string; lat: number; lon: number }>).value
         );
       setPositions(valid);
-    });
-  }, [assets]);
+    };
+
+    doFetch();
+    const id = setInterval(doFetch, 10_000);
+    return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [assets.length]);
 
   return positions;
 }
