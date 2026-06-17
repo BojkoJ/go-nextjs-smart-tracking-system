@@ -1,0 +1,857 @@
+\documentclass[11pt, a4paper, oneside]{article}
+
+% ====== Preambule ======
+\usepackage[a-2b]{pdfx}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[czech]{babel}
+\usepackage{lmodern}
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{url}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{float}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{ifthen}
+\usepackage{csquotes}
+\usepackage{listings}
+\usepackage{pdfpages}
+\usepackage{setspace}
+\setstretch{1.2}
+
+\pagestyle{fancy}
+\fancyhf{}
+
+\renewcommand{\lstlistlistingname}{Seznam listingů (ukázek kódu)}
+
+\fancyfoot[R]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\definecolor{codeorange}{rgb}{0.7,0.2,0.2}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.1,0.1,0.1}
+\definecolor{codepurple}{rgb}{0.8,0,0.82}
+\definecolor{backcolour}{rgb}{1,1,1}
+\definecolor{codeiden}{HTML}{2599B2}
+\definecolor{codecomment}{HTML}{008000}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codecomment}\emph,
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codeorange},
+    identifierstyle=\color{codeiden},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=t,
+    keepspaces=true,
+    language=Python,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=3
+}
+
+\lstset{style=mystyle}
+\usepackage{microtype}
+\sloppy
+
+\lstdefinelanguage{Go}{
+  keywords={break, case, chan, const, continue, default, defer, else, fallthrough,
+    for, func, go, goto, if, import, interface, map, package, range, return,
+    select, struct, switch, type, var},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={bool, byte, complex64, complex128, error, float32, float64, int,
+    int8, int16, int32, int64, rune, string, uint, uint8, uint16, uint32, uint64,
+    uintptr, true, false, nil, iota},
+  ndkeywordstyle=\color{red}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codecomment}\ttfamily,
+  stringstyle=\color{codeorange}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinelanguage{YAML}{
+  keywords={true, false, null, yes, no},
+  keywordstyle=\color{red}\bfseries,
+  basicstyle=\ttfamily\footnotesize,
+  sensitive=false,
+  comment=[l]{\#},
+  commentstyle=\color{codecomment}\ttfamily,
+  stringstyle=\color{codeorange}\ttfamily,
+  morestring=[b]',
+  morestring=[b]",
+  moredelim=[l][\color{blue}\bfseries]{:},
+  moredelim=**[il][\color{blue}\bfseries:]{$->$}
+}
+
+\lstdefinelanguage{HCL}{
+  keywords={resource, variable, provider, terraform, required_providers,
+    required_version, module, output, locals, data, default, type, description,
+    sensitive, source, version},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={true, false, null, string, number, bool, list, map, object},
+  ndkeywordstyle=\color{red}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[l]{\#},
+  commentstyle=\color{codecomment}\ttfamily,
+  stringstyle=\color{codeorange}\ttfamily,
+  morestring=[b]"
+}
+
+\lstdefinelanguage{TypeScript}{
+  keywords={break, case, catch, const, continue, debugger, default, delete, do,
+    else, export, for, function, if, import, in, instanceof, let, new, return,
+    super, switch, this, throw, try, typeof, var, void, while, with, yield,
+    class, enum, await, async, implements, package, protected, static, interface,
+    private, public, type, declare, extends, as, from, of},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={boolean, null, true, false, number, string, undefined, any, never, unknown},
+  ndkeywordstyle=\color{red}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codecomment}\ttfamily,
+  stringstyle=\color{codeorange}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\graphicspath{{obrázky_příklady/}}
+
+% ====== Tělo dokumentu ======
+\begin{document}
+
+\thispagestyle{empty}
+
+% Logo vlevo nahoře
+\begin{flushleft}
+    \includegraphics[height=3cm]{FEI_logo.png}
+\end{flushleft}
+
+\vspace*{3cm}
+
+\noindent
+{\Huge\textbf{Návrh a implementace distribuovaného systému pro správu aktiv s~využitím Cloud-Native principů}}
+
+\vspace{0.5cm}
+
+\noindent
+{\large Design and Implementation of a Distributed Asset Management System Using Cloud-Native Principles}
+
+\vspace{2cm}
+
+\noindent
+{\Large Bc. Jan Bojko}
+
+\vfill
+
+\begin{flushleft}
+    \large
+    Semestrální projekt
+
+    \vspace{0.3cm}
+    Vedoucí projektu: Ing. Radoslav Fasuga, Ph.D.
+
+    \vspace{0.3cm}
+    Ostrava, 2026
+\end{flushleft}
+
+\clearpage
+
+% ====== Zadání (textová verze ze zadani.txt) ======
+
+\thispagestyle{empty}
+\noindent\textbf{\Large Zadání semestrálního projektu}
+
+\vspace{1em}
+
+\noindent\textbf{Název:} Návrh a implementace distribuovaného systému pro správu aktiv s~využitím Cloud-Native principů
+
+\vspace{0.5em}
+
+\noindent\textbf{Rok zadání:} 2025/2026 \\
+\textbf{Vedoucí:} Ing. Radoslav Fasuga, Ph.D. \\
+\textbf{Student:} Bc. Jan Bojko \\
+\textbf{Zaměření:} Softwarové Inženýrství \\
+\textbf{Forma studia:} prezenční
+
+\vspace{1em}
+
+\noindent\textbf{Text zadání:}
+
+\noindent Cílem projektu je návrh a implementace škálovatelného distribuovaného systému pro real-time sledování a~lifecycle management fiktivního podnikového majetku (Asset Tracking). Projekt je zaměřen na využití moderní Cloud-Native architektury, asynchronní komunikace mezi službami a~automatizaci nasazení do kontejnerizovaného prostředí, včetně vizualizace dat v~klientské aplikaci.
+
+\begin{enumerate}
+    \item Student se seznámí s~principy Cloud-Native architektury, návrhovým vzorem Microservices a~ekosystémem jazyka Go (Golang) pro vývoj backendových služeb.
+    \item Student provede analýzu požadavků na distribuovaný systém a~porovná vhodné komunikační protokoly (gRPC, REST) a~metody pro zajištění konzistence dat (Event-Driven Architecture).
+    \item Student provede implementaci backendové části systému s~využitím \uv{Clean Architecture}, včetně kontejnerizace aplikací (Docker) a~orchestrace (Kubernetes). Součástí řešení bude i~zajištění observability (logování, metriky).
+    \item Výsledkem bude funkční prototyp distribuovaného systému zahrnující klientskou dashboard aplikaci pro vizualizaci dat, sada automatizovaných testů a~také technická příručka popisující: architekturu, lokální nasazení (Kubernetes/Docker) a~specifikaci API rozhraní.
+\end{enumerate}
+
+\vspace{1em}
+\noindent\textbf{Literatura:}
+\begin{enumerate}
+    \item Donovan, A. A., \& Kernighan, B. W. (2015). \textit{The Go Programming Language}. Addison-Wesley Professional. ISBN-13 978-0134190440
+    \item Newman, S. (2021). \textit{Building Microservices: Designing Fine-Grained Systems} (2nd ed.). O'Reilly Media. ISBN-13 978-1492034025
+    \item Martin, R. C. (2017). \textit{Clean Architecture: A Craftsman's Guide to Software Structure and Design}. Prentice Hall. ISBN-13 978-0134494166
+    \item Beyer, B., Jones, C., Petoff, J., \& Murphy, N. R. (2016). \textit{Site Reliability Engineering: How Google Runs Production Systems}. O'Reilly Media. ISBN-13 978-1491929124
+    \item Luksa, M. (2017). \textit{Kubernetes in Action}. Manning Publications. ISBN-13 978-1617293726
+\end{enumerate}
+
+\clearpage
+
+% ====== Abstrakt a Klíčová slova ======
+
+\thispagestyle{empty}
+\noindent\textbf{Abstrakt}
+
+\noindent Cílem této práce je návrh a~implementace distribuovaného systému pro správu firemních aktiv, který je postaven na principech Cloud-Native architektury.
+Výsledné řešení je tvořeno čtyřmi Go mikroslužbami komunikujícími přes gRPC a~NATS JetStream, klientskou dashboard aplikací postavenou na frameworku Next.js a~kompletní infrastrukturou definovanou kódem.
+Práce je zaměřena na praktické uplatnění návrhových vzorů Clean Architecture, Event-Driven Architecture, CQRS a~Dependency Injection.
+Pro orchestraci je využito kontejnerizační platformy Kubernetes ve formě odlehčené distribuce k3s spouštěné nástrojem k3d, doplněné o~Helm pro instalaci infrastrukturních komponent, Terraform pro deklarativní provisionování a~ArgoCD s~Tektonem pro GitOps a~kontinuální nasazování.
+Observabilita je zajištěna pomocí OpenTelemetry, Prometheus, Grafana, Tempo a~Loki.
+Pro ověření funkcionality byla implementována sada 72 automatizovaných testů, které jsou součástí CI pipeline.
+
+\vspace{1em}
+\noindent\textbf{Klíčová slova:} Cloud-Native; mikroslužby; Go; gRPC; NATS JetStream; Clean Architecture; Event-Driven; CQRS; Kubernetes; k3s; k3d; Docker; Helm; Terraform; ArgoCD; Tekton; OpenTelemetry; Prometheus; Grafana; Tempo; Loki; Next.js; TypeScript; PostgreSQL
+\vspace{4em}
+
+
+\noindent\textbf{Abstract}
+
+\noindent The goal of this work is the design and implementation of a~distributed asset management system built on Cloud-Native architectural principles.
+The resulting solution is composed of four Go microservices communicating through gRPC and NATS JetStream, a~client dashboard application built on the Next.js framework, and a~complete infrastructure defined as code.
+The work is focused on the practical application of the Clean Architecture, Event-Driven Architecture, CQRS, and Dependency Injection design patterns.
+For orchestration, the Kubernetes container platform is used in the form of the lightweight k3s distribution launched by the k3d tool, together with Helm for installing infrastructure components, Terraform for declarative provisioning, and ArgoCD with Tekton for GitOps and continuous deployment.
+Observability is provided by OpenTelemetry, Prometheus, Grafana, Tempo, and Loki.
+A~suite of 72 automated tests, which are part of the CI pipeline, has been implemented to verify functionality.
+
+\vspace{1em}
+\noindent\textbf{Keywords:} Cloud-Native; microservices; Go; gRPC; NATS JetStream; Clean Architecture; Event-Driven; CQRS; Kubernetes; k3s; k3d; Docker; Helm; Terraform; ArgoCD; Tekton; OpenTelemetry; Prometheus; Grafana; Tempo; Loki; Next.js; TypeScript; PostgreSQL
+
+\clearpage
+\thispagestyle{empty}
+\vspace*{\stretch{1}}
+\noindent
+{\normalsize\textbf{Poděkování}}
+
+\vspace{0.5em}
+
+\noindent
+Rád bych zde poděkoval vedoucímu semestrálního projektu Ing. Radoslavu Fasugovi, Ph.D. za odborné vedení a~cenné rady během tvoření tohoto semestrálního projektu.
+Dále děkuji Fakultě elektrotechniky a~informatiky VŠB, Technické univerzity Ostrava za poskytnuté zázemí a~podporu při studiu.
+
+\vspace*{1cm}
+
+\clearpage
+\tableofcontents
+
+\listoffigures
+
+\lstlistoflistings
+\clearpage
+\section*{Seznam použitých zkratek a~symbolů}
+\begin{tabular}{ll}
+\textbf{Zkratka} & \textbf{Význam} \\
+API & Application Programming Interface (Aplikační programové rozhraní) \\
+CDN & Content Delivery Network (Síť pro doručování obsahu) \\
+CI & Continuous Integration (Kontinuální integrace) \\
+CNCF & Cloud Native Computing Foundation \\
+CPU & Central Processing Unit (Procesor) \\
+CQRS & Command Query Responsibility Segregation \\
+DNS & Domain Name System (Systém doménových jmen) \\
+GHCR & GitHub Container Registry \\
+GPS & Global Positioning System (Globální polohovací systém) \\
+gRPC & gRPC Remote Procedure Calls \\
+HTTP & Hypertext Transfer Protocol (Hypertextový přenosový protokol) \\
+JSON & JavaScript Object Notation (Zápis objektů v~jazyce JavaScript) \\
+NATS & Neural Autonomic Transport System (Message broker) \\
+OTLP & OpenTelemetry Protocol \\
+PCB & Printed Circuit Board (Plošný spoj) \\
+REST & Representational State Transfer (Přenos reprezentačního stavu) \\
+RH & Relative Humidity (Relativní vlhkost) \\
+SDK & Software Development Kit (Vývojářská sada) \\
+SHA & Secure Hash Algorithm (Bezpečný hashovací algoritmus) \\
+SSG & Static Site Generation (Vykreslování statických stránek) \\
+SSR & Server-Side Rendering (Vykreslování na straně serveru) \\
+SVG & Scalable Vector Graphics (Škálovatelná vektorová grafika) \\
+SWR & Stale-While-Revalidate \\
+UI & User Interface (Uživatelské rozhraní) \\
+URL & Uniform Resource Locator (Jednotný lokátor zdrojů) \\
+W3C & World Wide Web Consortium \\
+YAML & YAML Ain't Markup Language (Konfigurační formát) \\
+\end{tabular}
+
+
+
+\clearpage
+\section{Úvod}
+
+Moderní distribuované systémy jsou v~současné době nejen tématem akademické literatury, ale především průmyslovým standardem, na kterém je postavena většina aplikací v~prostředí komerčních cloudových služeb. Důvodem je především škálovatelnost, odolnost vůči výpadkům a~možnost rychlého dodávání nových funkcí do produkčního prostředí. S~rozšířením kontejnerizačních technologií a~orchestračních platforem se tento přístup stal dostupným i~pro menší týmy programátorů, a~to bez nutnosti budovat vlastní datová centra či mít vlastní servery.
+
+Cílem tohoto semestrálního projektu je navržení a~implementace funkčního prototypu distribuovaného systému pro správu firemních aktiv (či~assetů), který demonstruje praktické využití Cloud-Native principů [\ref{cncf}]. Doménou projektu je sledování lodních kontejnerů přepravujících citlivý průmyslový náklad, u~kterého je nutné kontinuálně monitorovat polohu, teplotu, vlhkost a~stav uzamčení. Pro účely simulace byl zvolen scénář dovozu niobových terčů a~PCB substrátů z~Jižní Koreje pro výrobce supravodivých kvantových počítačů, přičemž samotná plavba je modelována na trase Pusan => Rotterdam.
+
+V~rámci tohoto projektu byly aplikovány návrhové vzory Clean Architecture, Event-Driven Architecture, CQRS a~Dependency Injection, a~to v~kontextu jazyka Go a~ekosystému Kubernetes. Asynchronní komunikace mezi mikroslužbami je zajištěna pomocí NATS JetStream, synchronní komunikace pak prostřednictvím gRPC. Pro klientskou dashboard aplikaci byl zvolen framework Next.js spolu s~knihovnami React, TypeScript, SWR a~Leaflet.
+
+Celá infrastruktura byla popsána jako kód (Infrastructure as Code) pomocí nástroje Terraform a~Helm chartů. Kontinuální nasazování je řešeno přístupem GitOps prostřednictvím ArgoCD, sestavování obrazů a~spouštění testů je zajištěno nástrojem Tekton. Observabilita systému je založena na nástrojích OpenTelemetry, Prometheus, Grafana, Tempo a~Loki, čímž jsou pokryty všechny tři pilíře pozorovatelnosti, tedy metriky, distribuované trasování a~logy.
+
+Práce je strukturována tak, aby čtenáře nejprve seznámila s~použitými architektonickými vzory a~technologiemi, následně byl popsán návrh systému a~jeho implementace, a~v~závěrečných kapitolách bylo představeno nasazení do clusteru, observabilita a~strategie testování.
+
+\clearpage
+\section{Architektonické vzory a~principy}
+
+Tato kapitola představuje hlavní návrhové vzory a~principy, na kterých je projekt postaven. Každý z~popsaných vzorů je v~implementaci přímo využit a~v~následujících kapitolách jsou uvedeny konkrétní příklady jeho použití.
+
+\subsection{Cloud-Native architektura}
+
+Termínem Cloud-Native je označován přístup k~tvorbě a~provozu aplikací, který je primárně určen pro běh v~dynamických prostředích veřejných, soukromých či hybridních cloudů. Aplikace navrhované tímto způsobem jsou typicky tvořeny menšími, nezávisle nasaditelnými komponentami, které jsou kontejnerizovány, orchestrovány a~automaticky škálovány na základě skutečného zatížení [\ref{cncf}]. Klíčovými rysy jsou deklarativní konfigurace, neměnnost infrastruktury, automatizace nasazení a~odolnost vůči částečným výpadkům.
+
+V~tomto projektu jsou Cloud-Native principy použity v~několika vrstvách. Aplikační vrstva je rozdělena do čtyř nezávislých mikroslužeb, z~nichž každá běží ve vlastním Docker kontejneru a~je nasazena v~Kubernetes clusteru. Infrastruktura je popsána deklarativně pomocí Terraformu a~Helm chartů. Image kontejnerů jsou neměnné, identifikované krátkým Git SHA, a~aktualizace produkčního prostředí probíhá přes GitOps workflow.
+
+\subsection{Microservices}
+
+Architektonický vzor Microservices (Mikro-služby) spočívá v~rozdělení monolitické aplikace na sadu menších, nezávislých služeb, z~nichž každá je zaměřena na jednu businessovou logiku a~je nasaditelná samostatně [\ref{newman}]. Komunikace mezi službama probíhá typicky přes lehké protokoly, jako jsou HTTP REST, gRPC nebo asynchronní zprávy v~rámci message brokeru.
+
+V~rámci tohoto projektu byly naprogramovány čtyři mikroslužby napsané v~jazyce Go, které se nacházejí v~adresáři \texttt{backend/cmd/}. Konkrétně se jedná o~službu \texttt{ingest} pro příjem telemetrie přes gRPC, \texttt{processor} pro asynchronní zpracování zpráv z~fronty, \texttt{query} pro obsluhu dotazů z~klientské aplikace a~\texttt{simulator}, který generuje syntetickou telemetrii pro 50 simulovaných kontejnerů. Pátou komponentou je klientská aplikace \texttt{frontend} postavená na frameworku Next.js. Každá z~těchto služeb má vlastní vstupní bod \texttt{main.go}, vlastní Docker image, vlastní Kubernetes Deployment a~vlastní sadu Service objektů.
+
+\subsection{Clean Architecture}
+
+Clean Architecture je sada zásad pro strukturování zdrojového kódu, kterou popsal Robert C. Martin v jeho knize Clean Architecture [\ref{martin}]. Hlavní myšlenkou tohoto přístupu je, že závislosti mezi jednotlivými vrstvami aplikace musí směřovat zevnitř ven, čímž je doménová vrstva izolována od konkrétních infrastrukturních detailů, jako jsou databáze, message brokery nebo komunikační protokoly.
+
+V~tomto projektu byla Clean Architecture aplikována formou rozdělení backendového kódu do tří hlavních vrstev. Doménová vrstva, která se nachází v~adresáři \texttt{backend/internal/core/domain}, obsahuje business entity \texttt{Asset}, \texttt{Telemetry\-Data} a~\texttt{Alert} bez jakékoliv vnější závislosti. Vrstva portů v~adresáři \texttt{backend/internal/core/ports} definuje rozhraní (Go \texttt{interface}), která jsou doménou požadována pro komunikaci s~vnějším světem. Konečně vrstva adaptérů v~adresáři \texttt{backend/internal/adapters} implementuje tato rozhraní pomocí konkrétních technologií, jako jsou PostgreSQL, NATS JetStream, gRPC a~HTTP.
+
+Listing \ref{lst:ports} obsahuje příklad portového rozhraní, které je doménou definováno a~adaptéry implementováno.
+\vspace{2em}
+\begin{lstlisting}[language=Go, numbers=left,
+caption={Portová rozhraní pro repozitáře (\texttt{backend/internal/core/ports/repository.go})},
+captionpos=b,
+label={lst:ports}]
+package ports
+
+import (
+    "context"
+    "github.com/BojkoJ/go-nextjs-smart-tracking-system/backend/internal/core/domain"
+)
+
+type AssetRepository interface {
+    SaveAsset(ctx context.Context, asset domain.Asset) error
+    GetAssetByID(ctx context.Context, assetID string) (*domain.Asset, error)
+    ListAssets(ctx context.Context) ([]domain.Asset, error)
+    UpdateAssetStatus(ctx context.Context, assetID string, status domain.AssetStatus) error
+}
+
+type TelemetryRepository interface {
+    SaveTelemetry(ctx context.Context, telemetry domain.TelemetryData) error
+    GetLastTelemetry(ctx context.Context, assetID string) (*domain.TelemetryData, error)
+    ListTelemetryHistory(ctx context.Context, assetID string, limit, offset int) ([]domain.TelemetryData, error)
+}
+
+type AlertRepository interface {
+    SaveAlert(ctx context.Context, alert domain.Alert) error
+    ListAlerts(ctx context.Context) ([]domain.Alert, error)
+    ListAllAlertsForAsset(ctx context.Context, assetID string) ([]domain.Alert, error)
+}
+\end{lstlisting}
+
+\vspace{2em}
+
+Konkrétní implementace těchto rozhraní pro PostgreSQL je obsažena v~souboru \texttt{backend/internal/adapters/repository/postgres\_repo.go}. Vrstva služeb (use cases) je v~adresáři \texttt{backend/internal/services} a~obsahuje business logiku, která je nezávislá na konkrétních technologiích.
+
+\subsection{Event-Driven Architecture}
+
+Architektura řízená událostmi (Event-Driven Architecture) je vzor, ve kterém je komunikace mezi komponentami zprostředkována publikací a~konzumací událostí, typicky prostřednictvím message brokeru [\ref{fowler-eda}]. Hlavními výhodami jsou volné spřažení komponent, lepší odolnost vůči výpadkům a~možnost asynchronního zpracování velkých objemů dat.
+
+V~tomto projektu je Event-Driven Architecture realizována pomocí NATS JetStream. Služba \texttt{ingest} publikuje zprávy do streamu \texttt{TELEMETRY} na subjekt \texttt{telemetry.ingest}, služba \texttt{processor} se na tento subjekt přihlašuje jako trvalý (durable) konzument. Důsledkem tohoto rozdělení je, že pokud služba \texttt{processor} selže nebo je restartována, zprávy zůstávají uloženy v~JetStream frontě a~jsou doručeny po obnovení činnosti, čímž je zajištěna garance doručení alespoň jednou (at-least-once delivery).
+
+\subsection{CQRS (Command Query Responsibility Segregation)}
+
+Vzor CQRS spočívá v~oddělení modelu pro zápis dat od modelu pro čtení dat [\ref{fowler-cqrs}]. Místo jednoho monolitického repozitáře, který obsluhuje obě cesty, jsou v~CQRS systému vytvořeny dva samostatné toky, které mohou být škálovány a~optimalizovány nezávisle.
+
+V~tomto projektu byl zvolen zjednodušený CQRS přístup. Příkazový tok (Command) je realizován posloupností \texttt{simulator} $\rightarrow$ gRPC $\rightarrow$ \texttt{ingest} $\rightarrow$ NATS $\rightarrow$ \texttt{processor} $\rightarrow$ PostgreSQL. Dotazovací tok (Query) je realizován posloupností \texttt{frontend} $\rightarrow$ HTTP $\rightarrow$ \texttt{query} $\rightarrow$ PostgreSQL. Tímto je dosaženo toho, že čtení neblokuje zápis a~obě cesty mohou být škálovány samostatně, což je v~praxi využito horizontálním autoškálováním služby \texttt{query} (manifest \texttt{hpa.yaml}).
+
+\subsection{Dependency Injection}
+
+Dependency Injection je technika, ve které jsou závislosti komponenty (typicky implementace rozhraní) předávány zvenku, místo aby si je komponenta vytvářela sama. Důsledkem je lepší testovatelnost, jelikož v~testech mohou být skutečné implementace nahrazeny mocky či faky.
+
+V~tomto projektu je každá funkce \texttt{main()} kompozičním kořenem, ve kterém jsou vytvářeny konkrétní implementace (NATS klient, PostgreSQL repozitář) a~předávány jako rozhraní (\texttt{ports.Event\-Producer}, \texttt{ports.Asset\-Repository}, $\dots$) do služeb a~handlerů. Listing \ref{lst:di} ukazuje příklad kompozice ve službě \texttt{processor}.
+\vspace{2em}
+\begin{lstlisting}[language=Go, numbers=left,
+caption={Kompozice závislostí ve službě processor (\texttt{backend/cmd/processor/main.go})},
+captionpos=b,
+label={lst:di}]
+pgRepo, err := repository.NewPostgresRepo(context.Background(), config.PostgresURL)
+if err != nil {
+    logger.Error("failed to create new postgres repo", "error", err)
+    os.Exit(1)
+}
+
+// pgRepo implementuje 3 rozhrani (AssetRepository, TelemetryRepository, AlertRepository)
+processingService := services.NewProcessingService(pgRepo, pgRepo, pgRepo, logger)
+
+natsClient, err := eventbus.NewNATSClient(config.NATSUrl, logger)
+if err != nil {
+    logger.Error("failed to create new NATS client", "error", err)
+    os.Exit(1)
+}
+\end{lstlisting}
+\vspace{2em}
+\subsection{12-Factor App}
+
+Metodika 12-Factor App je sada doporučení pro tvorbu aplikací určených pro provoz v~cloudu [\ref{twelve-factor}]. Z~této metodiky jsou v~projektu uplatněny především následující principy. Konfigurace je výhradně předávána pomocí proměnných prostředí (princip III), což je realizováno funkcí \texttt{common.Load()}, která validuje povinné proměnné \texttt{NATS\_URL} a~\texttt{POSTGRES\_URL}. Žádné konfigurační hodnoty nejsou pevně vloženy do obrazu kontejneru. Závislosti jsou explicitně deklarovány v~souboru \texttt{go.mod} (princip II). Procesy aplikace jsou bezstavové (princip VI), veškerý stav je uložen v~PostgreSQL nebo v~NATS JetStream. Logy jsou zapisovány na standardní výstup ve strukturovaném JSON formátu (princip XI), což je dále využito agentem Promtail.
+
+\clearpage
+\section{Použité technologie}
+
+Tato kapitola obsahuje stručný popis jednotlivých technologií, které byly v~projektu nasazeny. U~každé technologie je uvedeno, jakou úlohu v~projektu plní a~kterých souborů či adresářů se týká.
+
+\subsection{Go (Golang)}
+
+Go je staticky typovaný kompilovaný jazyk vyvinutý společností Google, který je navržen s~důrazem na jednoduchost, výkon a~nativní podporu paralelismu [\ref{go-book}]. V~projektu byl Go zvolen jako základ pro všechny čtyři backendové mikroslužby. Verze \texttt{1.25} byla použita jak v~lokálním vývoji, tak v~build fázi Dockerfile. Veškerá zdrojová sada Go souborů se nachází v~adresáři \texttt{backend/}, vstupní body jednotlivých mikroslužeb pak v~podadresářích \texttt{backend/cmd/}.
+
+\subsection{gRPC a~Protocol Buffers}
+
+gRPC je framework pro vzdálené volání procedur založený na HTTP/2 a~na binárním kódování Protocol Buffers [\ref{grpc-doc}]. V~projektu je gRPC využit pro synchronní komunikaci mezi službami \texttt{simulator} a~\texttt{ingest}. Kontrakt \texttt{TelemetryService} je definován v~souboru \texttt{backend/proto/telemetry.proto} a~vygenerovaný Go kód je umístěn v~souborech \texttt{telemetry.pb.go} a~\texttt{telemetry\_grpc.pb.go}. Volbou gRPC byla získána výrazně menší velikost přenášených zpráv (přibližně pětkrát menší než ekvivalentní JSON přes HTTP) a~automatické přidělování každého příchozího volání do vlastní goroutiny, čímž je dosaženo paralelního zpracování bez nutnosti psát kód pro synchronizaci.
+
+\subsection{NATS JetStream}
+
+NATS je vysokovýkonný message broker s~modelem publish-subscribe [\ref{nats-doc}]. Rozšíření JetStream přidává perzistentní úložiště zpráv s~podporou trvanlivých konzumentů, opětovného doručení a~filtru subjektů. V~projektu je NATS JetStream nasazen v~namespace \texttt{infrastructure} pomocí Helm chartu \texttt{nats}, instalovaného Terraformem (soubor \texttt{backend/deploy/terraform/infrastructure.tf}). Stream s~názvem \texttt{TELEMETRY} a~subjekty \texttt{telemetry.>} je vytvářen aplikačním kódem v~souboru \texttt{backend/internal/adapters/eventbus/nats\_client.go} při startu klienta.
+
+\subsection{PostgreSQL a~pgx}
+
+PostgreSQL je relační databázový systém, který je v~projektu využit pro perzistentní uložení assetů, telemetrie a~alertů. Schéma databáze je vytvářeno Kubernetes Jobem \texttt{db-init}, který je spouštěn ArgoCD jako \texttt{PreSync} hook (soubor \texttt{backend/deploy/k8s/db-init-job.yaml}). Pro připojení z~Go kódu byla zvolena knihovna \texttt{pgx/v5}, která je nativním driverem pro PostgreSQL bez nutnosti používat bridge přes \texttt{database/sql}. Tím je dosaženo přibližně dvojnásobné až trojnásobné rychlosti oproti standardní knihovně a~podpory PostgreSQL-specifických typů. Pool spojení je vytvářen funkcí \texttt{pgxpool.New()} a~používán v~souboru \texttt{backend/internal/adapters/repository/postgres\_repo.go}.
+
+\subsection{chi router}
+
+\texttt{chi} je odlehčený HTTP router pro Go, kompatibilní se standardní knihovnou \texttt{net/http}. V~projektu je použit ve službě \texttt{query} pro směrování REST endpointů a~pro získávání URL parametrů (soubor \texttt{backend/internal/adapters/handler/http\_handler.go}).
+
+\subsection{Next.js}
+
+Next.js je framework pro tvorbu React aplikací s~podporou serverového vykreslování (SSR) a~generování statických stránek (SSG) [\ref{nextjs}]. V~projektu byla použita verze 16 spolu s~Reactem ve verzi 19. Klientská aplikace je umístěna v~adresáři \texttt{frontend/} a~obsahuje routovací strukturu v~adresáři \texttt{app/}, sdílené komponenty v~adresáři \texttt{components/} a~hooky pro práci s~daty v~adresáři \texttt{hooks/}.
+
+\subsection{TypeScript, SWR, Zod, Leaflet}
+
+TypeScript byl ve frontendové části zvolen pro statickou typovou kontrolu. Knihovna SWR je využita pro pravidelné stahování dat z~REST API s~automatickou revalidací, knihovna Zod pro runtime validaci JSON odpovědí a~odvození TypeScript typů (soubor \texttt{frontend/lib/schemas.ts}). Pro vykreslení interaktivní mapy s~polohou lodi byla použita knihovna Leaflet, která je dynamicky načítána z~CDN v~komponenty \texttt{ShipMap} (soubor \texttt{frontend/components/ShipMap.tsx}).
+
+\subsection{Docker}
+
+Docker je platforma pro tvorbu a~běh kontejnerů. V~projektu je využita pro sestavování obrazů všech backendových mikroslužeb i~klientské aplikace. Společný vícefázový Dockerfile pro Go služby je umístěn v~souboru \texttt{backend/Dockerfile}. Volbou parametru \texttt{ARG SERVICE} je rozhodnuto, která ze čtyř mikroslužeb je v~daném buildu kompilována. Tím je zachována jediná zdrojová definice obrazu pro všechny služby, čímž je redukována udržovací zátěž.
+
+\subsection{Kubernetes (k3s, k3d)}
+
+Kubernetes je orchestrační platforma pro správu kontejnerizovaných aplikací [\ref{luksa}]. Pro lokální vývoj byla zvolena odlehčená distribuce \texttt{k3s} od společnosti Rancher, která je doručována ve formě jediné binárky o~velikosti přibližně 60~MB. Distribuce \texttt{k3s} obsahuje výchozí Traefik Ingress controller a~je optimalizována pro prostředí s~omezenými prostředky. Nástrojem \texttt{k3d} je každý uzel clusteru zabalen do Docker kontejneru, čímž je celý cluster spuštěn na jediném vývojářském počítači. Topologie clusteru je tvořena jedním control-plane uzlem, dvěma worker uzly a~load balancerem.
+
+\subsection{Helm}
+
+Helm je balíčkovací systém pro Kubernetes, který umožňuje instalovat a~udržovat aplikace ve formě Helm chartů. V~projektu je Helm využit pro instalaci infrastrukturních komponent jako NATS, PostgreSQL, kube-prometheus-stack, Grafana Tempo a~Loki-stack. Tyto Helm releasy jsou deklarovány v~Terraformu (soubor \texttt{backend/deploy/terraform/infrastructure.tf}) a~jsou instalovány automaticky při spuštění příkazu \texttt{terraform apply}.
+
+\subsection{Terraform}
+
+Terraform je nástroj pro deklarativní popis infrastruktury (Infrastructure as Code). V~projektu je Terraformem zajištěno zprostředkování celého k3d clusteru, vytvoření Kubernetes namespace a~instalace Helm chartů s~infrastrukturními komponentami. Terraform soubory se nachází v~adresáři \texttt{backend/deploy/terraform/} a~jsou organizovány do souborů \texttt{main.tf}, \texttt{cluster.tf}, \texttt{namespaces.tf}, \texttt{infrastructure.tf}, \texttt{argocd.tf} a~\texttt{variables.tf}. Použité providery jsou \texttt{moio/k3d}, \texttt{hashicorp/kubernetes} a~\texttt{hashicorp/helm}.
+
+\subsection{ArgoCD}
+
+ArgoCD je nástroj pro GitOps kontinuální nasazování, který průběžně srovnává stav clusteru s~deklarovaným stavem v~Git repozitáři. V~projektu je ArgoCD nasazen v~namespace \texttt{argocd} pomocí Helm chartu (soubor \texttt{backend/deploy/terraform/argocd.tf}). ArgoCD aplikace je definována v~souboru \texttt{backend/deploy/argocd/application.yaml} a~je nakonfigurována tak, aby sledovala adresář \texttt{backend/deploy/k8s} na větvi \texttt{master}. Při detekci změny manifestů je provedena automatická synchronizace s~politikou \texttt{prune: true} a~\texttt{selfHeal: true}.
+
+\subsection{Tekton}
+
+Tekton je framework pro deklarativní definici CI pipeline, který běží přímo uvnitř Kubernetes clusteru [\ref{tekton}]. V~projektu je Tekton využit pro sestavování Docker obrazů, spouštění testů a~aktualizaci image tagů v~deployment manifestech. Tekton zdroje se nachází v~adresáři \texttt{backend/deploy/tekton/} a~jsou členěny na \texttt{Task} objekty (\texttt{task-git-clone.yaml}, \texttt{task-run-tests.yaml}, \texttt{task-build-push.yaml}, \texttt{task-update-manifest.yaml}), na \texttt{Pipeline} objekt (\texttt{pipeline.yaml}) a~na \texttt{PipelineRun} objekt (\texttt{pipeline-run.yaml}). Pro sestavování obrazů uvnitř clusteru je použit nástroj Kaniko, kterým jsem se vyhnul nutnosti přístupu k~Docker daemonu.
+
+\subsection{OpenTelemetry}
+
+OpenTelemetry je sada SDK a~API pro instrumentaci aplikací, která je standardizována pod hlavičkou CNCF [\ref{otel}]. V~projektu je OpenTelemetry využita pro generování distribuovaných trace spanů ve všech čtyřech Go službách. Inicializace je provedena funkcí \texttt{InitTracerProvider()} v~souboru \texttt{backend/internal/common/otel.go}. Trace kontext je propagován standardem W3C TraceContext, a~to jak přes hranici gRPC volání pomocí \texttt{otelgrpc}, tak přes hranici NATS zpráv pomocí vlastního \texttt{TextMapCarrier} (soubor \texttt{nats\_client.go}).
+
+\subsection{Prometheus a~Grafana}
+
+Prometheus je systém pro sběr metrik formou periodického scrapování HTTP endpointů. V~projektu je Prometheus nasazen jako součást chartu \texttt{kube-prometheus-stack}. Vlastní aplikační metriky jsou definovány v~souboru \texttt{backend/internal/common/metrics.go} a~jsou vystaveny na cestě \texttt{/metrics}. Prometheus Operator automaticky detekuje \texttt{ServiceMonitor} objekty (soubor \texttt{backend/deploy/k8s/servicemonitor.yaml}) s~labelem \texttt{release: kube-prometheus-stack} a~začne dané služby pravidelně scrapovat. Grafana je nasazena spolu s~Prometheem a~poskytuje grafické rozhraní pro vizualizaci metrik a~prohlížení trasování i~logů.
+
+\subsection{Grafana Tempo}
+
+Tempo je distribuovaný backend pro ukládání trace spanů. V~projektu je Tempo nakonfigurován tak, aby přijímal OTLP zprávy přes gRPC na portu \texttt{4317}, kam jsou tracingová data odesílána ze všech čtyř Go služeb. Konfigurace je provedena v~Terraformu (soubor \texttt{backend/deploy/terraform/infrastructure.tf}, blok \texttt{helm\_release.tempo}).
+
+\subsection{Loki a~Promtail}
+
+Loki je systém pro agregaci a~indexaci logů, který je v~projektu nasazen společně s~agentem Promtail jako součást chartu \texttt{loki-stack}. Promtail běží jako DaemonSet na každém uzlu clusteru a~čte logy z~cest \texttt{/var/log/pods}, které jsou následně odesílány do Loki. Strukturované JSON logy zapisované Go službami pomocí knihovny \texttt{log/slog} jsou tak automaticky indexovány a~v~Grafaně mohou být filtrovány podle pole \texttt{service}.
+
+\clearpage
+\section{Návrh systému}
+
+Tato kapitola popisuje celkovou architekturu systému a~datové toky mezi jednotlivými komponentami. Konkrétní implementační detaily jsou rozpracovány v~následující kapitole.
+
+\subsection{Celková architektura}
+
+Systém je tvořen pěti hlavními aplikačními komponentami, čtyřmi backendovými mikroslužbami napsanými v~jazyce Go a~jednou klientskou aplikací postavenou na frameworku Next.js. Tyto komponenty jsou nasazeny v~Kubernetes namespace \texttt{tracking-system}. Infrastrukturní komponenty, tedy NATS JetStream a~PostgreSQL, jsou nasazeny v~namespace \texttt{infrastructure}. Komponenty observability stacku jsou nasazeny v~namespace \texttt{monitoring}. ArgoCD je nasazeno v~namespace \texttt{argocd}.
+
+Architektura systému je popsána následujícím schématem datových toků:
+
+\begin{verbatim}
+Simulator --gRPC--> Ingest --> NATS JetStream --> Processor --> PostgreSQL
+                                                                     |
+Frontend <--HTTP REST--------- Query <-------------------------------+
+\end{verbatim}
+
+\subsection{Datové toky}
+
+V~systému jsou rozlišeny dva základní datové toky, které odpovídají rozdělení dle vzoru CQRS popsanému v~kapitole 2.5.
+
+\textbf{Příkazový tok} je realizován posloupností \texttt{simulator} $\rightarrow$ \texttt{ingest} $\rightarrow$ \texttt{NATS Jet\-Stream} $\rightarrow$ \texttt{processor} $\rightarrow$ \texttt{PostgreSQL}. V~tomto směru jsou každou sekundu generovány telemetrické záznamy pro každý z~50 simulovaných kontejnerů, čímž je vytvořena zátěž přibližně 50 gRPC volání za sekundu. Služba \texttt{ingest} pouze validuje vstupní data, serializuje je do JSON formátu a~odesílá do NATS JetStream fronty bez čekání na zpracování. Tímto je dosaženo velmi nízké latence příjmu, která není závislá na rychlosti zpracování. Služba \texttt{processor} pak asynchronně konzumuje zprávy z~fronty, vyhodnocuje obchodní pravidla a~ukládá data do PostgreSQL.
+
+\textbf{Dotazovací tok} je realizován posloupností \texttt{frontend} $\rightarrow$ \texttt{Traefik Ingress} $\rightarrow$ \texttt{query} $\rightarrow$ \texttt{PostgreSQL}. Klientská aplikace každých 5 až 10 sekund stahuje aktuální stav assetů, poslední telemetrický záznam a~historii pro vybraný kontejner. Služba \texttt{query} čte data přímo z~PostgreSQL bez zapojení NATS.
+
+\textbf{Tok observability} je doplňkový a~probíhá souběžně se dvěma předchozími. Veškeré metriky jsou periodicky scrapovány Prometheem z~endpointu \texttt{/metrics}, trace spany jsou exportovány přes OTLP gRPC do Tempa a~strukturované logy jsou agentem Promtail sbírány a~odesílány do Loki.
+
+\subsection{Životní cyklus assetu}
+
+Každý ze 50 simulovaných lodních kontejnerů (asset) prochází v~rámci své doby trvání stavovým automatem. V~doménové vrstvě (soubor \texttt{backend/internal/core/domain/asset.go}) jsou definovány čtyři možné stavy. Stav \texttt{new} reprezentuje nově registrovaný kontejner, který dosud nebyl aktivován. Stav \texttt{active} (zkratkou též označovaný jako OK) reprezentuje běžně provozovaný kontejner, jehož telemetrie je v~rámci stanovených limitů. Stav \texttt{maintenance} reprezentuje kontejner, u~něhož byla detekována nestandardní situace vyžadující servisní zásah. Stav \texttt{decommissioned} reprezentuje kontejner, který byl vyřazen z~provozu, typicky po doručení do cílové destinace.
+
+Při inicializaci databáze (Kubernetes Job \texttt{db-init}) je každému z~50 assetů přiřazen výchozí stav \texttt{active}, výchozí limit maximální teploty 28~$^\circ$C, minimální teploty 12~$^\circ$C a~maximální vlhkosti 45~\% RH. Tyto limity reprezentují skutečné požadavky pro přepravu citlivého průmyslového nákladu, konkrétně niobových terčů a~PCB substrátů určených pro výrobu supravodivých kvantových počítačů.
+
+V~aktuální implementaci je v~souboru \texttt{backend/internal/services/processing.go} službou \texttt{processor} automaticky řešen jediný přechod, a~to z~\texttt{active} na \texttt{decommissioned}. K~tomuto přechodu dochází v~okamžiku, kdy Haversinova vzdálenost mezi aktuální pozicí lodi a~přístavem Rotterdam klesne pod 50~km, čímž je modelováno doručení nákladu do cílové destinace. Stav \texttt{maintenance} je v~doméně připraven jako rezervovaný cíl pro manuální servisní zásah nebo pro budoucí rozšíření o~automatický přechod na základě opakovaného porušení limitů. Přechod do tohoto stavu v~současné verzi není automaticky vyvoláván žádným pravidlem v~Processoru.
+
+Při překročení některého z~limitů (teplota nad maximem, teplota pod minimem, vlhkost nad maximem, odemčený zámek) je nezávisle na stavovém automatu vygenerován alert příslušného typu a~uložen do tabulky \texttt{alerts}.
+
+
+\clearpage
+\section{Implementace}
+
+V~této kapitole jsou popsány klíčové implementační detaily backendových mikroslužeb a~klientské aplikace. Pro lepší ilustraci jsou vybrané pasáže kódu uvedeny ve formě listingů.
+
+\subsection{Doménová vrstva}
+
+Doménová vrstva je středem aplikace a~je tvořena business entitami bez jakékoliv vnější závislosti. V~souborech \texttt{asset.go}, \texttt{telemetry.go} a~\texttt{alert.go} jsou definovány tři hlavní entity systému. Pro entitu \texttt{Asset} byly vedle základních atributů (ID, jméno, čas vytvoření) zavedeny obchodní limity přímo v~doméně, čímž je vyjádřeno, že tyto hodnoty jsou součástí byznysového kontraktu konkrétního kontejneru, nikoliv konfigurace služby.
+
+Pro reprezentaci stavu assetu byl využit Go idiom pojmenovaného typu nad \texttt{string} spolu se sadou konstant, kterými je modelován stavový automat \texttt{new} $\rightarrow$ \texttt{active} $\rightarrow$ \texttt{maintenance} $\rightarrow$ \texttt{decommissioned}. Stejným způsobem je definován i~typ \texttt{AlertType}, kterým jsou kategorizovány jednotlivé typy generovaných alertů.
+
+\subsection{gRPC adaptér}
+
+Vstupní brána pro telemetrii je tvořena gRPC handlerem v~souboru \texttt{backend/internal/adapters/handler/grpc\_handler.go}. Tento handler implementuje vygenerované rozhraní \texttt{Telemetry\-Service\-Server} z~protobuf definice a~jeho jedinou metodou je \texttt{Send\-Telemetry}. V~rámci této metody je provedeno namapování \texttt{*pb.TelemetryRequest} na doménovou strukturu \texttt{domain.Telemetry\-Data}, čímž je dodržena hranice mezi adaptérem a~doménou, za kterou není dovoleno propagovat závislost na vygenerovaném protobuf kódu.
+
+Trace ID je preferenčně získáváno z~aktivního OpenTelemetry span contextu, který je do gRPC volání injektován klientem pomocí instrumentace \texttt{otelgrpc}. Pokud aktivní span není nalezen (typicky při testech), je použita hodnota z~pole \texttt{TraceId} zprávy.
+
+\subsection{NATS klient a~propagace trace kontextu}
+
+Implementace NATS klienta je obsažena v~souboru \texttt{backend/internal/} \texttt{adapters/eventbus/nats\_client.go}. Klient implementuje dvě portová rozhraní, \texttt{Event\-Producer} a~\texttt{Event\-Consumer}, čímž je umožněno použít jednu instanci ve dvou rolích. Při publikaci zprávy je trace kontext aktivního OpenTelemetry spanu injektován do NATS hlaviček pomocí pomocné struktury \texttt{nats\-Header\-Carrier}, která implementuje rozhraní \texttt{propagation.TextMapCarrier}. Při konzumaci zprávy je tento kontext naopak extrahován, čímž je v~Grafana Tempu zachována souvislá trace přes hranici asynchronní fronty.
+\vspace{2em}
+\begin{lstlisting}[language=Go, numbers=left,
+caption={Publikace zprávy do NATS s~injektovaným trace kontextem},
+captionpos=b,
+label={lst:nats-publish}]
+func (client *NATSClient) PublishMessage(ctx context.Context, subject string, data []byte) error {
+    msg := &nats.Msg{
+        Subject: subject,
+        Data:    data,
+        Header:  nats.Header{},
+    }
+    // Injektuj W3C trace context do NATS message headers (traceparent, tracestate)
+    otel.GetTextMapPropagator().Inject(ctx, natsHeaderCarrier{msg.Header})
+
+    _, err := client.JetStreamContext.PublishMsg(msg)
+    if err != nil {
+        return fmt.Errorf("publishing message to JetStream: %w", err)
+    }
+    return nil
+}
+\end{lstlisting}
+\vspace{2em}
+Konzument je registrován jako trvalý (durable) pod identifikátorem \texttt{processor-consumer}. Tím je zajištěno, že pokud je služba \texttt{processor} restartována, je obnovena z~poslední potvrzené pozice ve frontě a~žádná zpráva není ztracena.
+
+\subsection{Byznys logika v~Processing Service}
+
+Mozkem celého systému je služba \texttt{processor}, která konzumuje zprávy z~NATS, ukládá je do PostgreSQL a~vyhodnocuje obchodní pravidla. Implementace je obsažena v~souboru \texttt{backend/internal/services/processing.go}. V~Listingu \ref{lst:processing} je uveden zkrácený výňatek zachycující jádro této logiky.
+\vspace{2em}
+\begin{lstlisting}[language=Go, numbers=left,
+caption={Vyhodnocení obchodních pravidel ve službě processor},
+captionpos=b,
+label={lst:processing}]
+func (s *ProcessingServiceImpl) ProcessTelemetry(ctx context.Context, telemetry domain.TelemetryData) error {
+    start := time.Now()
+    defer func() {
+        common.ProcessingDuration.Observe(time.Since(start).Seconds())
+        common.TelemetryProcessed.Inc()
+    }()
+
+    asset, err := s.assetRepo.GetAssetByID(ctx, telemetry.AssetID)
+    if err != nil && asset == nil {
+        return fmt.Errorf("getting an asset by ID: %w", err)
+    }
+    if asset == nil {
+        return nil
+    }
+
+    if err := s.telemetryRepo.SaveTelemetry(ctx, telemetry); err != nil {
+        return fmt.Errorf("saving telemetry: %w", err)
+    }
+
+    if telemetry.Temperature > asset.MaxTemperature {
+        alert := domain.Alert{
+            ID: uuid.New().String(), AssetID: asset.ID,
+            Type:    domain.AlertTemperatureMax,
+            Message: fmt.Sprintf("temperature %.1f exceeded max %.1f", telemetry.Temperature, asset.MaxTemperature),
+            CreatedAt: time.Now(),
+        }
+        if err := s.alertRepo.SaveAlert(ctx, alert); err != nil {
+            return fmt.Errorf("saving alert: %w", err)
+        }
+        common.AlertsGenerated.WithLabelValues(string(domain.AlertTemperatureMax)).Inc()
+    }
+    // Analogicky pro MinTemperature, MaxHumidity a IsLocked.
+
+    if asset.Status == domain.StatusActive {
+        distKm := haversine(telemetry.Latitude, telemetry.Longitude, rotterdamLat, rotterdamLon)
+        if distKm <= arrivalThresholdKm {
+            _ = s.assetRepo.UpdateAssetStatus(ctx, asset.ID, domain.StatusDecommissioned)
+        }
+    }
+    return nil
+}
+\end{lstlisting}
+\vspace{2em}
+Kompletní implementace pokrývá čtyři typy alertů (\texttt{temperature\_exceeded\_max\_limit}, \texttt{temperature\_exceeded\_min\_limit}, \texttt{humidity\_exceeded\_max\_limit}, \texttt{container\_unlocked}) a~přechod stavu na \texttt{decommissioned} při dosažení 50~km vzdálenosti od přístavu Rotterdam. Vzdálenost je počítána Haversinovou formulí v~pomocné funkci \texttt{haversine}, čímž je dosaženo fyzikálně správného výsledku po povrchu Země.
+
+\subsection{HTTP adaptér v~Query Service}
+
+REST API pro klientskou aplikaci je obsluhováno službou \texttt{query}, jejíž HTTP handler je implementován v~souboru \texttt{backend/internal/adapters/handler/http\_handler.go}. Pro směrování je použit router \texttt{chi}. Bylo registrováno celkem sedm endpointů pro výpis assetů, načítání jednotlivého assetu, načítání poslední telemetrie, načítání historie telemetrie, výpis všech alertů, výpis alertů pro konkrétní asset a~endpoint \texttt{/metrics} pro Prometheus.
+
+Pro odpovědi je použito streamové kódování přes \texttt{json.NewEncoder()}, kterým je eliminována alokace mezipaměti pro celý JSON dokument. U~endpointu pro historii telemetrie byl implementován limit s~výchozí hodnotou 150 záznamů a~maximální hodnotou 1000 záznamů, čímž je předejito vyčerpání paměti při příliš velkém dotazu.
+
+\subsection{Simulator}
+
+Simulátor je samostatná binárka, jejíž veškerá logika je obsažena v~souboru \texttt{backend/cmd/simulator/main.go}. V~rámci funkce \texttt{main()} je nejprve inicializován OpenTelemetry tracer provider a~vytvořen gRPC klient k~Ingest službě. Následně je v~cyklu spuštěno 50 goroutin, z~nichž každá reprezentuje jeden lodní kontejner a~každou sekundu odesílá jeden telemetrický záznam.
+
+Pro výpočet aktuální polohy lodi je definováno 10 GPS waypointů na trase Pusan, Rotterdam. Lineární interpolací mezi sousedními waypointy je získána aktuální pozice, přičemž rychlost lodi je nastavena na 15 uzlů a~simulace je zrychlena dvacetinásobně. Celková délka trasy činí přibližně 18\,734~km (10\,116 námořních mil), reálná plavba by trvala přibližně 28 dní, po dvacetinásobném zrychlení je tak celá plavba modelována na přibližně 34 hodin simulovaného reálného času. Teplota je modelována denním sinusovým cyklem s~bází mezi 14 a~26~$^\circ$C, vlhkost dvanáctihodinovým sinusovým cyklem s~bází mezi 30 a~40~\% RH. K~oběma hodnotám je dále přičten náhodný šum a~per-kontejnerový ofset, kterým jsou modelovány drobné rozdíly mezi jednotlivými umístěními v~nákladovém prostoru.
+
+
+\subsection{Klientská aplikace}
+
+Klientská aplikace je tvořena single-page Next.js aplikací, jejíž kořenová stránka je definována v~souboru \texttt{frontend/app/page.tsx}. Hlavní část obrazovky je věnována interaktivní mapě s~polohou lodi, která je vykreslována komponentou \texttt{ShipMap} (soubor \texttt{frontend/components/ShipMap.tsx}). Mapa je založena na knihovně Leaflet, která je dynamicky načítána z~veřejného CDN při prvním vykreslení komponenty. Pro každou unikátní GPS pozici je na mapě umístěn značka v~podobě SVG ikony lodi, přičemž po kliknutí na značku je v~pravém panelu zobrazen detail kontejneru.
+
+Listing \ref{lst:swr} ukazuje použití knihovny SWR pro periodické stahování dat z~REST API.
+\vspace{2em}
+\begin{lstlisting}[language=TypeScript, numbers=left,
+caption={SWR hooky pro pravidelné stahování dat (\texttt{frontend/hooks/useAssets.ts})},
+captionpos=b,
+label={lst:swr}]
+"use client";
+
+import useSWR from "swr";
+import { fetchAssets, fetchLastTelemetry } from "@/lib/api";
+import type { Asset, Telemetry } from "@/lib/schemas";
+
+export function useAssets() {
+    return useSWR<Asset[]>("assets", fetchAssets, { refreshInterval: 10_000 });
+}
+
+export function useLastTelemetry(assetId: string | null) {
+    return useSWR<Telemetry>(
+        assetId ? `telemetry/${assetId}` : null,
+        () => fetchLastTelemetry(assetId!),
+        { refreshInterval: 5_000 }
+    );
+}
+\end{lstlisting}
+\vspace{2em}
+Veškeré odpovědi z~REST API jsou validovány knihovnou Zod, jejíž schémata jsou v~souboru \texttt{frontend/lib/schemas.ts}. Tím je zajištěno, že případná nekonzistence mezi backendovým modelem a~frontendovým očekáváním je odhalena již při běhu klienta, a~nikoliv až v~průběhu vykreslení komponenty. Náhled klientské aplikace je k~vidění na Obrázku \ref{fig:frontend}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{aplikace_front-end.png}
+    \caption{Klientská dashboard aplikace s~mapou pozice lodi a~panelem telemetrie}
+    \label{fig:frontend}
+\end{figure}
+
+\clearpage
+\section{Nasazení a~infrastruktura}
+
+V~této kapitole je popsán postup nasazení celého systému do k3d clusteru, počínaje deklarativním provisionováním pomocí Terraformu, přes konfiguraci ArgoCD pro GitOps, až po definici CI pipeline v~Tektonu.
+
+\subsection{Infrastruktura jako kód s~Terraformem}
+
+Terraform soubory v~adresáři \texttt{backend/deploy/terraform/} obsahují kompletní popis infrastruktury, která je vytvořena spuštěním jediného příkazu \texttt{terraform apply}. V~souboru \texttt{main.tf} jsou deklarováni tři Terraform provideři, \texttt{moio/k3d}, \texttt{hashicorp/kubernetes} a~\texttt{hashicorp/helm}, a~je provedena jejich konfigurace s~přihlašovacími údaji clusteru čerpanými přímo ze zdroje \texttt{k3d\_cluster}, čímž je eliminována nutnost dvoufázového nasazení.
+
+V~souboru \texttt{cluster.tf} je definován k3d cluster s~jedním control-plane uzlem, dvěma worker uzly a~mapováním portu \texttt{8080} hostitelského počítače na port \texttt{80} uvnitř clusteru, čímž je zpřístupněn Traefik Ingress. V~souboru \texttt{namespaces.tf} jsou vytvořeny čtyři namespace, \texttt{infrastructure}, \texttt{tracking-system}, \texttt{argocd} a~\texttt{monitoring}. V~souboru \texttt{infrastructure.tf} jsou pak instalovány Helm releasy, kterými jsou nasazeny NATS JetStream, PostgreSQL (Bitnami chart), kube-prometheus-stack, Grafana Tempo a~Loki-stack. Příklad jednoho takového releasu je v~Listingu \ref{lst:tf-nats}.
+\vspace{2em}
+\begin{lstlisting}[language=HCL, numbers=left,
+caption={Definice Helm releasu pro NATS JetStream (\texttt{infrastructure.tf})},
+captionpos=b,
+label={lst:tf-nats}]
+resource "helm_release" "nats" {
+    name       = var.helm_release_nats_name
+    repository = var.helm_release_nats_repo
+    chart      = var.helm_release_nats_chart
+    namespace  = kubernetes_namespace.infra.metadata[0].name
+
+    set = [
+        {
+            name  = "config.jetstream.enabled"
+            value = "true"
+        },
+        {
+            name  = "config.cluster.enabled"
+            value = "false"
+        }
+    ]
+}
+\end{lstlisting}
+\vspace{2em}
+\subsection{Kubernetes manifesty}
+
+Veškeré aplikační manifesty jsou umístěny v~adresáři \texttt{backend/deploy/k8s/}, kde je ArgoCD sleduje a~automaticky aplikuje při každé změně. Pro každou ze čtyř mikroslužeb je definován jeden Deployment a~jeden Service objekt. Výjimkou je služba \texttt{simulator}, ke které není přidružen žádný Service, jelikož je pouze odchozím klientem. Naopak služba \texttt{ingest} má v~Service objektu vystaveny dva porty, \texttt{50051} pro gRPC a~\texttt{9090} pro Prometheus metriky.
+
+Pro směrování externího provozu byl vytvořen Ingress objekt (soubor \texttt{ingress.yaml}), který je obsluhován Traefikem. Prefixy cest \texttt{/assets} a~\texttt{/alerts} jsou směrovány do služby \texttt{query}, veškerý ostatní provoz pak do služby \texttt{frontend}. Pro službu \texttt{query} je definován HorizontalPodAutoscaler (soubor \texttt{hpa.yaml}), kterým je počet replik škálován mezi jednou a~třemi instancemi v~závislosti na 70\% využití CPU. Sdílená nekonfidenciální konfigurace je obsažena v~ConfigMap \texttt{tracking-config} (soubor \texttt{configmap.yaml}), citlivé hodnoty jako URL databáze jsou v~Secret \texttt{tracking-secret} (soubor \texttt{secret.yaml}), který je v~repozitáři ignorován a~musí být na každém clusteru vytvořen ručně.
+
+Schéma databáze a~počáteční seed dat 50 assetů je vytvářen Kubernetes Jobem \texttt{db-init}, který je opatřen anotací \texttt{argocd.argoproj.io/hook: PreSync}. Tím je zajištěno, že databázové schéma je k~dispozici dříve, než jsou startovány aplikační pody.
+
+\subsection{GitOps s~ArgoCD}
+
+ArgoCD je nakonfigurován jako jediný zdroj pravdy pro stav clusteru. Po naklonování repozitáře a~přihlášení do ArgoCD UI je vytvořena Application, která je nakonfigurována tak, aby sledovala adresář \texttt{backend/deploy/k8s} na větvi \texttt{master} a~aplikovala změny s~politikou \texttt{Automatic} a~\texttt{selfHeal: true}. ArgoCD periodicky (každé 3 minuty) kontroluje Git repozitář a~v~případě odchylky aplikuje aktualizované manifesty.
+
+Sekvence událostí při běžné iteraci vývoje je následující. Vývojářem je commitnuta změna v~Go kódu na větev \texttt{master}. Manuálně je spuštěn Tekton PipelineRun, kterým jsou sestaveny nové Docker obrazy, jsou pushnuty do GitHub Container Registry s~tagem ve formě krátkého Git SHA, a~následně je commitnut do repozitáře aktualizovaný image tag v~odpovídajících deployment manifestech. Tato Git změna je následně detekována ArgoCD, které provede synchronizaci stavu a~aktualizované pody jsou postupně rolled out. Pro okamžitou aplikaci bez čekání na pravidelný polling je k~dispozici příkaz pro vynucený hard refresh. Webové rozhraní ArgoCD se stavem nasazení je zachyceno na Obrázku \ref{fig:argocd}.
+\vspace{2em}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{argo_cd.png}
+    \caption{Webové rozhraní ArgoCD se stavem synchronizace aplikace}
+    \label{fig:argocd}
+\end{figure}
+\vspace{2em}
+\subsection{Tekton pipeline}
+
+Tekton CI pipeline je definována v~souboru \texttt{backend/deploy/tekton/pipeline.yaml}. Pipeline obsahuje devět kroků, které jsou spouštěny sekvenčně. Prvním krokem je naklonování repozitáře (\texttt{git-clone}), druhým spuštění \texttt{go test ./...} pro veškeré balíčky (\texttt{run-tests}). Pokud testy selžou, je pipeline okamžitě zastavena a~žádný obraz není sestaven. Tím je zaručeno, že v~GHCR existují pouze obrazy z~kódu, který prošel testy.
+
+Následuje pět kroků sestavení a~push obrazů (\texttt{build-push-ingest}, \texttt{build-push-processor}, \texttt{build-push-query}, \texttt{build-push-simulator}, \texttt{build-push-frontend}), které jsou v~současné konfiguraci spouštěny sekvenčně. Tímto je předejito vyčerpání DNS pod zátěží paralelních Kaniko buildů. Každý obraz je tagován dvěma tagy, krátkým Git SHA pro neměnnou identifikaci a~\texttt{latest} pro pohodlnost. Posledním krokem je \texttt{update-manifest}, ve kterém je pomocí \texttt{sed} přepsán image tag ve všech pěti deployment manifestech a~je proveden commit a~push zpět do Git repozitáře. Tím je uzavřena smyčka mezi CI pipeline a~GitOps nasazením. Ukázka definice tasku pro build a~push je v~Listingu \ref{lst:tekton-build}.
+\vspace{2em}
+\begin{lstlisting}[language=YAML, numbers=left,
+caption={Tekton Task pro build a~push obrazu pomocí Kaniko (\texttt{task-build-push.yaml})},
+captionpos=b,
+label={lst:tekton-build}]
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+    name: build-push
+    namespace: tracking-system
+spec:
+    params:
+        - name: service
+        - name: image-tag
+        - name: registry
+          default: ghcr.io/bojkoj
+    workspaces:
+        - name: source
+        - name: docker-credentials
+          mountPath: /kaniko/.docker
+    steps:
+        - name: build-and-push
+          image: gcr.io/kaniko-project/executor:latest
+          args:
+              - --dockerfile=$(workspaces.source.path)/backend/Dockerfile
+              - --context=$(workspaces.source.path)/backend
+              - --build-arg=SERVICE=$(params.service)
+              - --destination=$(params.registry)/$(params.service):$(params.image-tag)
+              - --destination=$(params.registry)/$(params.service):latest
+              - --cache=true
+              - --cache-repo=$(params.registry)/kaniko-cache
+\end{lstlisting}
+\vspace{2em}
+\subsection{Vícefázový Dockerfile}
+
+Pro všechny čtyři Go mikroslužby je sdílen jeden vícefázový Dockerfile v~souboru \texttt{backend/Dockerfile}. V~první fázi (\texttt{builder}) je z~obrazu \texttt{golang:1.25-alpine} zkompilována Go binárka pro konkrétní službu, která je vybrána parametrem \texttt{ARG SERVICE}. V~druhé fázi (\texttt{runner}) je z~minimálního obrazu \texttt{alpine:3.19} zkopírována pouze výsledná binárka, čímž je dosaženo cílové velikosti přibližně 20~MB. Pro běh procesu byl vytvořen dedikovaný non-root uživatel \texttt{appuser}, kterým je dodržena bezpečnostní praktika minimálního oprávnění.
+
+\clearpage
+\section{Observabilita}
+
+Observabilita systému byla v~projektu řešena podle modelu tří pilířů, kterými jsou metriky, distribuované trasování a~logy. Pro každý z~těchto pilířů je v~namespace \texttt{monitoring} nasazena samostatná komponenta a~veškerá data jsou unifikovaně zobrazitelná v~Grafaně.
+
+\subsection{Metriky}
+
+Aplikační metriky jsou definovány v~souboru \texttt{backend/internal/common/metrics.go} a~jsou zaregistrovány do default Prometheus registry pomocí knihovny \texttt{promauto}. Konkrétně byly zavedeny čtyři metriky. \texttt{tracking\_ingest\_requests\_total} typu CounterVec měří počet gRPC volání přijatých službou \texttt{ingest} a~je labellována dle pole \texttt{success}. \texttt{tracking\_telemetry\_processed\_total} typu Counter měří počet zpráv zpracovaných službou \texttt{processor}. \texttt{tracking\_alerts\_generated\_total} typu CounterVec měří počet vygenerovaných alertů dle typu. \texttt{tracking\_processing\_duration\_seconds} typu Histogram měří latenci zpracování jedné telemetrické zprávy.
+
+Pro každou ze tří služeb (\texttt{ingest}, \texttt{processor}, \texttt{query}) byl vytvořen \texttt{ServiceMonitor} objekt v~souboru \texttt{servicemonitor.yaml}, který je opatřen labelem \texttt{release: kube-prometheus-stack}. Tímto je Prometheus Operatorem automaticky rozpoznán a~jednotlivé služby jsou scrapovány každých 15 sekund. Náhled vlastních metrik vizualizovaných v~Grafaně je k~vidění na Obrázku \ref{fig:metrics}.
+\vspace{2em}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{grafana_prometheus_metrics.png}
+    \caption{Vlastní aplikační metriky vizualizované v~Grafaně}
+    \label{fig:metrics}
+\end{figure}
+\vspace{2em}
+\subsection{Distribuované trasování}
+
+Distribuované trasování je řešeno pomocí OpenTelemetry SDK. Inicializace je provedena funkcí \texttt{InitTracerProvider()} v~souboru \texttt{backend/internal/common/otel.go}. Pokud je nastavena proměnná prostředí \texttt{OTEL\_EXPORTER\_OTLP\_ENDPOINT}, jsou trace spany exportovány přes OTLP gRPC do Grafana Tempa. V~opačném případě jsou spany vypisovány na standardní výstup, čímž je usnadněn lokální vývoj.
+
+Propagace trace kontextu je zajištěna standardem W3C TraceContext a~probíhá přes dvě hranice. Mezi Simulatorem a~Ingestem je kontext propagován prostřednictvím \texttt{otelgrpc} stats handleru, kterým jsou injektovány hlavičky \texttt{traceparent} a~\texttt{tracestate} do gRPC metadat. Mezi Ingestem a~Processorem je kontext propagován prostřednictvím vlastní implementace \texttt{TextMapCarrier} v~NATS hlavičkách. Tím je v~Tempu zachována souvislá trace přes celý pipeline, počínaje generováním telemetrie ve Simulatoru a~konče uložením do PostgreSQL Processorem. Ukázka detailu trace v~Grafana Tempu je na Obrázku \ref{fig:tempo}.
+\vspace{2em}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.95\textwidth]{grafana_tempo_traces.png}
+    \caption{Distribuovaná trace zachycena v~Grafana Tempu}
+    \label{fig:tempo}
+\end{figure}
+\vspace{2em}
+\subsection{Logy}
+
+Logy jsou ve všech čtyřech Go službách generovány standardní knihovnou \texttt{log/slog} ve strukturovaném JSON formátu. Logger je inicializován funkcí \texttt{NewLogger()} v~souboru \texttt{backend/internal/common/logger.go}, kterou je každému záznamu automaticky přidán atribut \texttt{service} s~jménem dané mikroslužby. Tím je v~Loki umožněn jednoduchý filtr podle pole \texttt{service}, čímž jsou logy efektivně oddělitelné mezi službami.
+
+Promtail běží jako DaemonSet na každém uzlu clusteru a~čte logy z~adresáře \texttt{/var/log/pods}. Tyto logy jsou indexovány v~Loki a~v~Grafaně mohou být filtrovány například výrazem \texttt{\{namespace="tracking-system", service="processor"\}}.
+
+\clearpage
+\section{Testování}
+
+Pro ověření funkcionality byla implementována sada 72 automatizovaných unit testů. Testy jsou napsány ve standardním Go testing frameworku bez jakékoliv externí závislosti. Pro testování HTTP handlerů je využit balíček \texttt{net/http/httptest}, kterým je v~rámci procesu spuštěn dočasný HTTP server. Pro izolaci od skutečné infrastruktury jsou definovány mock struktury implementující portová rozhraní \texttt{Asset\-Repository}, \texttt{Telemetry\-Repository}, \texttt{Alert\-Repository} a~\texttt{Event\-Producer}.
+
+Rozložení testů je následující. Soubor \texttt{http\_handler\_test.go} obsahuje 15 testů s~pokrytím 87,8\% pro handler balíček. Soubor \texttt{grpc\_handler\_test.go} obsahuje 5 testů. Soubor \texttt{processing\_test.go} obsahuje 14 testů s~pokrytím 89,2\%. Soubor \texttt{ingestion\_test.go} obsahuje 12 testů. Soubor \texttt{main\_test.go} u~Simulatoru obsahuje 18 testů, které pokrývají Haversinovu funkci, výpočet pozice lodi, výpočet teploty a~výpočet vlhkosti. Soubor \texttt{config\_test.go} pak obsahuje 8 testů pro načítání konfigurace z~proměnných prostředí.
+
+Testy jsou navrženy jako zaručovatelé kvality v~CI pipeline. Jsou spouštěny Tektonem jako druhý krok pipeline, hned po naklonování repozitáře a~před jakýmkoliv Docker buildem. Pokud testy selžou, je celá pipeline okamžitě zastavena a~žádný nový obraz není sestaven ani pushnut. Tím je zaručeno, že v~GitHub Container Registry je dostupný pouze kód, který prošel testy.
+
+\section{Závěr}
+
+V~rámci tohoto semestrálního projektu byl navržen a~implementován funkční prototyp distribuovaného systému pro správu firemních aktiv, který demonstruje praktické uplatnění Cloud-Native principů. Cíle stanovené v~zadání byly splněny, byl realizován backend tvořený čtyřmi Go mikroslužbami komunikujícími přes gRPC a~NATS JetStream, klientská dashboard aplikace postavená na frameworku Next.js, kompletní infrastruktura definovaná pomocí Terraformu a~Helm chartů, GitOps nasazení s~ArgoCD a~automatizovaná CI pipeline v~Tektonu. Byla zajištěna observabilita ve všech třech pilířích pomocí OpenTelemetry, Prometheus, Grafana, Tempo a~Loki a~byla vytvořena sada 72 automatizovaných testů, které jsou součástí CI pipeline.
+
+V~rámci implementace byly aplikovány návrhové vzory Clean Architecture, Event-Driven Architecture, CQRS a~Dependency Injection. Touto kombinací bylo dosaženo systému, ve kterém je doménová vrstva oddělena od konkrétních infrastrukturních detailů, čtecí a~zápisové cesty jsou nezávisle škálovatelné, a~kód je dobře testovatelný díky portovým rozhraním a~mockovatelným závislostem.
+
+Mezi možná rozšíření, která by mohla být v~budoucnu implementována, lze zařadit přidání paralelního zpracování v~Processoru pomocí pull-based JetStream konzumentů s~více workery, nasazení horizontálního autoškálování i~pro službu \texttt{ingest} na základě metriky příchozích gRPC volání za sekundu, integraci s~externí mapovou službou pro lepší vizualizaci námořních tras a~nasazení komponenty AlertManager pro odesílání notifikací o~překročení limitů prostřednictvím e-mailu nebo Slacku.
+
+\clearpage
+\section*{Reference}
+\begin{enumerate}
+    \item \label{cncf} Cloud Native Computing Foundation. CNCF Cloud Native Definition. Dostupné z: \url{https://github.com/cncf/toc/blob/main/DEFINITION.md}
+    \item \label{newman} Newman, S. (2021). \textit{Building Microservices: Designing Fine-Grained Systems} (2nd ed.). O'Reilly Media.
+    \item \label{martin} Martin, R. C. (2017). \textit{Clean Architecture: A Craftsman's Guide to Software Structure and Design}. Prentice Hall.
+    \item \label{fowler-eda} Fowler, M. What do you mean by Event-Driven? Dostupné z: \url{https://martinfowler.com/articles/201701-event-driven.html}
+    \item \label{fowler-cqrs} Fowler, M. CQRS. Dostupné z: \url{https://martinfowler.com/bliki/CQRS.html}
+    \item \label{twelve-factor} Wiggins, A. The Twelve-Factor App. Dostupné z: \url{https://12factor.net/}
+    \item \label{go-book} Donovan, A. A., \& Kernighan, B. W. (2015). \textit{The Go Programming Language}. Addison-Wesley.
+    \item \label{grpc-doc} gRPC oficiální dokumentace. Dostupné z: \url{https://grpc.io/docs/}
+    \item \label{nats-doc} NATS oficiální dokumentace. Dostupné z: \url{https://docs.nats.io/}
+    \item \label{nextjs} Next.js dokumentace. Dostupné z: \url{https://nextjs.org/docs}
+    \item \label{luksa} Luksa, M. (2017). \textit{Kubernetes in Action}. Manning Publications.
+    \item \label{tekton} Tekton Pipelines dokumentace. Dostupné z: \url{https://tekton.dev/docs/pipelines/}
+    \item \label{otel} OpenTelemetry oficiální dokumentace. Dostupné z: \url{https://opentelemetry.io/docs/}
+    \item PostgreSQL oficiální dokumentace. Dostupné z: \url{https://www.postgresql.org/docs/}
+    \item pgx PostgreSQL driver pro Go. Dostupné z: \url{https://github.com/jackc/pgx}
+    \item Helm oficiální dokumentace. Dostupné z: \url{https://helm.sh/docs/}
+    \item Terraform oficiální dokumentace. Dostupné z: \url{https://developer.hashicorp.com/terraform/docs}
+    \item ArgoCD oficiální dokumentace. Dostupné z: \url{https://argo-cd.readthedocs.io/}
+    \item k3s odlehčená distribuce Kubernetes. Dostupné z: \url{https://k3s.io/}
+    \item k3d nástroj pro k3s v~Dockeru. Dostupné z: \url{https://k3d.io/}
+    \item Kaniko nástroj pro build kontejnerů v~Kubernetes. Dostupné z: \url{https://github.com/GoogleContainerTools/kaniko}
+    \item Beyer, B., Jones, C., Petoff, J., \& Murphy, N. R. (2016). \textit{Site Reliability Engineering: How Google Runs Production Systems}. O'Reilly Media.
+\end{enumerate}
+
+
+\end{document}
